@@ -12,7 +12,7 @@ public class Indexer {
     public int chunksCounter;
     public String postingFilePath;
 
-    /*Creates a temporary dictionary from entire documents in iteration -> currentTErmsDictionary*/
+    /*Creates a temporary dictionary from entire documents in chunk*/
     public void createDicFromParsedDocs(HashSet<Document> docsFromParser) throws FileNotFoundException {
 
         for (Document d : docsFromParser) {
