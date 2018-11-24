@@ -6,10 +6,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 public class Document {
-    private static HashMap<String,Document> docCollection = new HashMap<>(); //all the docs in this chunk
+    public static HashMap<String,Document> docCollection = new HashMap<>(); //all the docs in this chunk
     private String docID;
     private HashSet<Term> docTerms;
-    private HashMap<String, Integer> termCount;
+    public HashMap<String, Integer> termCount;
     private int uniqueTermsCounter;
     private String mostFreqTerm;
     private int mostFreqTermVal;
@@ -21,6 +21,18 @@ public class Document {
         this.docTerms = new HashSet<>();
         this.termCount = new HashMap<>();
         this.cityOfOrigin = cityOfOrigin;
+    }
+
+    public String getDocID() {
+        return docID;
+    }
+
+    public HashSet<Term> getDocTerms() {
+        return docTerms;
+    }
+
+    public HashMap<String, Integer> getTermCount() {
+        return termCount;
     }
 
     public boolean isUniqueTerm(String term){ return !docTerms.contains(term);}
