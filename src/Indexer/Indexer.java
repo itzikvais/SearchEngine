@@ -1,3 +1,5 @@
+package Indexer;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -5,6 +7,7 @@ import java.io.PrintWriter;
 import java.util.*;
 
 import ExternalClasses.Document;
+import ExternalClasses.Term;
 import  ReadFile.*;
 
 public class Indexer {
@@ -19,17 +22,20 @@ public class Indexer {
             Iterator termsIterator = d.getDocTerms().iterator();
 
             while (termsIterator.hasNext()){
-                String term = (String)termsIterator.next();
-                StringBuilder sb = currDocTerms.get(term);
+                Term term = (Term)termsIterator.next();
+                StringBuilder sb = currDocTerms.get(term.termString);
                 if (sb==null) {
                     sb = new StringBuilder();
-                    currDocTerms.put(term, sb);
+                    currDocTerms.put(term.termString, sb);
                 }
-                if (sb.length()!=0) sb.append(",");
+                if (sb.length()!=0) sb.append("#");
                 sb.append(d.getDocID());
                 sb.append(":");
-                sb.append(d.getTermCount().get(term));
-
+                double normalizedTF =  d.getTermCount().get(term)/d.mostFreqTermVal;
+                sb.append(","+normalizedTF);
+                if (term.isBold) sb.append(",B");
+                if (term.isTitle) sb.append(",T");
+                // DocID:TF,B,T#DocID:TF,B,T#DocID:TF,B,T...
             }
 
             d.termCount.clear();
@@ -41,13 +47,14 @@ public class Indexer {
         chunksCounter++;
 
     }
+    /* helper function to create temp posting file*/
     public  void createTempPostingFile() throws FileNotFoundException {
         ArrayList<String> termsList = new ArrayList<>(currDocTerms.keySet());
         Collections.sort(termsList);
 
         String tempPostingDirPath = ReadFile.postingsPath +"\\"+"temp";
 
-        //craeting directory for temp posting files
+        //creating directory for temp posting files
         File f = new File(tempPostingDirPath);
         if (!f.exists())
             f.mkdir();

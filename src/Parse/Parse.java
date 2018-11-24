@@ -5,7 +5,7 @@ import java.io.*;
 import Parse.*;
 
 public class Parse {
-    private HashMap<String, Integer> terms=new HashMap<String, Integer>(  );//String for the term and int for the number of return's
+    private HashMap<String, Integer> terms=new HashMap<String, Integer>(  );//String for the termString and int for the number of return's
     private HashSet<String> conjuctions = new HashSet<String>();
     private HashSet<String> tags=new HashSet<String>(  );
     private HashMap<String,Integer> monthList=new HashMap<String,Integer>(  );

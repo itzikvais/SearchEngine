@@ -3,7 +3,7 @@ package ExternalClasses;
 import javafx.util.Pair;
 
 public class Term {
-    public String term;
+    public String termString;
     public int tf;
     public boolean isTitle;
     public boolean isBold;

@@ -1,7 +1,5 @@
 package ExternalClasses;
 
-import ExternalClasses.Term;
-
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -12,7 +10,7 @@ public class Document {
     public HashMap<String, Integer> termCount;
     private int uniqueTermsCounter;
     private String mostFreqTerm;
-    private int mostFreqTermVal;
+    public int mostFreqTermVal;
     private String cityOfOrigin;
     private int docLength;
 
@@ -37,17 +35,17 @@ public class Document {
 
     public boolean isUniqueTerm(String term){ return !docTerms.contains(term);}
     public void addTerm(Term term){
-        if(isUniqueTerm(term.term)){
+        if(isUniqueTerm(term.termString)){
             docTerms.add(term);
             uniqueTermsCounter++;
-            termCount.put(term.term,1);
+            termCount.put(term.termString,1);
         }
         else {
-            int val = termCount.get(term.term) + 1;
-            termCount.put(term.term,val);
+            int val = termCount.get(term.termString) + 1;
+            termCount.put(term.termString,val);
             if (val > mostFreqTermVal) {
                 mostFreqTermVal = val;
-                mostFreqTerm = term.term;
+                mostFreqTerm = term.termString;
             }
         }
         docLength++;

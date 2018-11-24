@@ -3,7 +3,7 @@ package Parse;
 public interface IParse {
     /**
      *
-     * @return a term after parsing
+     * @return a termString after parsing
      */
     public String parse();
 }
