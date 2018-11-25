@@ -21,6 +21,11 @@ public class Document {
         this.cityOfOrigin = cityOfOrigin;
     }
 
+    @Override
+    public int hashCode() {
+        return docID.hashCode();
+    }
+
     public String getDocID() {
         return docID;
     }

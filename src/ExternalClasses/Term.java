@@ -9,4 +9,9 @@ public class Term {
     public boolean isBold;
     public boolean isCity;
     public Pair<Integer,Integer> positionInDoc;
+
+    @Override
+    public int hashCode() {
+        return termString.hashCode();
+    }
 }

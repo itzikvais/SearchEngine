@@ -28,14 +28,14 @@ public class Indexer {
                     sb = new StringBuilder();
                     currDocTerms.put(term.termString, sb);
                 }
-                if (sb.length()!=0) sb.append("#");
+                if (sb.length()!=0) sb.append("|");
                 sb.append(d.getDocID());
                 sb.append(":");
                 double normalizedTF =  d.getTermCount().get(term)/d.mostFreqTermVal;
                 sb.append(","+normalizedTF);
                 if (term.isBold) sb.append(",B");
                 if (term.isTitle) sb.append(",T");
-                // DocID:TF,B,T#DocID:TF,B,T#DocID:TF,B,T...
+                // DocID:TF,B,T|DocID:TF,B,T|DocID:TF,B,T...
             }
 
             d.termCount.clear();
@@ -71,10 +71,14 @@ public class Indexer {
         //writing all the terms from "termList" to the temp file
         for (String term : termsList) {
             pw.println(term + "#" + currDocTerms.get(term).toString());
+            //term1#DocID:TF,B,T|DocID:TF,B,T|DocID:TF,B,T...\n
+            //term2#DocID:TF,B,T|DocID:TF,B,T|DocID:TF,B,T...\n
+            // SORTED!
         }
 
         pw.flush();
         pw.close();
     }
+
 
 }
