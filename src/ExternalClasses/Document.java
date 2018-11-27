@@ -1,13 +1,11 @@
 package ExternalClasses;
 
 import java.util.HashMap;
-import java.util.HashSet;
 
 public class Document {
     public static HashMap<String,Document> docCollection = new HashMap<>(); //all the docs in this chunk
     private String docID;
-    private HashSet<Term> docTerms;
-    public HashMap<String, Integer> termCount;
+    public HashMap<Term, Integer> docTermsAndCount;
     private int uniqueTermsCounter;
     private String mostFreqTerm;
     public int mostFreqTermVal;
@@ -16,38 +14,28 @@ public class Document {
 
     public Document(String docID, String cityOfOrigin) {
         this.docID = docID;
-        this.docTerms = new HashSet<>();
-        this.termCount = new HashMap<>();
+        this.docTermsAndCount = new HashMap<>();
         this.cityOfOrigin = cityOfOrigin;
+        docCollection.put(docID,this);
     }
 
     @Override
-    public int hashCode() {
-        return docID.hashCode();
-    }
+    public int hashCode() {return docID.hashCode(); }
 
     public String getDocID() {
         return docID;
     }
 
-    public HashSet<Term> getDocTerms() {
-        return docTerms;
-    }
+    public boolean isUniqueTerm(Term term){ return !docTermsAndCount.containsKey(term);}
 
-    public HashMap<String, Integer> getTermCount() {
-        return termCount;
-    }
-
-    public boolean isUniqueTerm(String term){ return !docTerms.contains(term);}
     public void addTerm(Term term){
-        if(isUniqueTerm(term.termString)){
-            docTerms.add(term);
+        if(isUniqueTerm(term)){
+            docTermsAndCount.put(term,1);
             uniqueTermsCounter++;
-            termCount.put(term.termString,1);
         }
         else {
-            int val = termCount.get(term.termString) + 1;
-            termCount.put(term.termString,val);
+            int val = docTermsAndCount.get(term) + 1;
+            docTermsAndCount.put(term,val);
             if (val > mostFreqTermVal) {
                 mostFreqTermVal = val;
                 mostFreqTerm = term.termString;
@@ -55,6 +43,7 @@ public class Document {
         }
         docLength++;
     }
+
     public static long getNumberOfDocuments(){
         return docCollection.size();
     }

@@ -19,7 +19,7 @@ public class Indexer {
     public void createDicFromParsedDocs(HashSet<Document> docsFromParser) throws FileNotFoundException {
 
         for (Document d : docsFromParser) {
-            Iterator termsIterator = d.getDocTerms().iterator();
+            Iterator termsIterator = d.docTermsAndCount.keySet().iterator();
 
             while (termsIterator.hasNext()){
                 Term term = (Term)termsIterator.next();
@@ -31,15 +31,15 @@ public class Indexer {
                 if (sb.length()!=0) sb.append("|");
                 sb.append(d.getDocID());
                 sb.append(":");
-                double normalizedTF =  d.getTermCount().get(term)/d.mostFreqTermVal;
+                double normalizedTF =  d.docTermsAndCount.get(term)/d.mostFreqTermVal;
                 sb.append(","+normalizedTF);
                 if (term.isBold) sb.append(",B");
                 if (term.isTitle) sb.append(",T");
                 // DocID:TF,B,T|DocID:TF,B,T|DocID:TF,B,T...
             }
 
-            d.termCount.clear();
-            d.termCount = null;
+            d.docTermsAndCount.clear();
+            d.docTermsAndCount = null;
             Document.docCollection.put(d.getDocID(), d);
         }
         createTempPostingFile();
@@ -54,7 +54,7 @@ public class Indexer {
 
         String tempPostingDirPath = ReadFile.postingsPath +"\\"+"temp";
 
-        //creating directory for temp posting files
+        //creating directory for temp posting files, this dic will removed after the final posting file will created
         File f = new File(tempPostingDirPath);
         if (!f.exists())
             f.mkdir();
