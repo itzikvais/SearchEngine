@@ -1,38 +1,34 @@
 package Indexer;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.*;
 
 import ExternalClasses.Document;
+import ExternalClasses.ReaderForMerge;
 import ExternalClasses.Term;
 import  ReadFile.*;
 
 public class Indexer {
-    public HashMap<String,StringBuilder> currDocTerms;
-    public int chunksCounter;
-    public String postingFilePath;
+    private HashMap<String,StringBuilder> currDocTerms;
+    private int chunksCounter;
+    private String postingFilePath;
 
     /*Creates a temporary dictionary from entire documents in chunk*/
     public void createDicFromParsedDocs(HashSet<Document> docsFromParser) throws FileNotFoundException {
 
         for (Document d : docsFromParser) {
-            Iterator termsIterator = d.docTermsAndCount.keySet().iterator();
 
-            while (termsIterator.hasNext()){
-                Term term = (Term)termsIterator.next();
+            for (Term term : d.docTermsAndCount.keySet()) {
                 StringBuilder sb = currDocTerms.get(term.termString);
-                if (sb==null) {
+                if (sb == null) {
                     sb = new StringBuilder();
                     currDocTerms.put(term.termString, sb);
                 }
-                if (sb.length()!=0) sb.append("|");
+                if (sb.length() != 0) sb.append("|");
                 sb.append(d.getDocID());
                 sb.append(":");
-                double normalizedTF =  d.docTermsAndCount.get(term)/d.mostFreqTermVal;
-                sb.append(","+normalizedTF);
+                double normalizedTF = (double)d.docTermsAndCount.get(term) / (double)d.mostFreqTermVal;
+                sb.append(",").append(normalizedTF);
                 if (term.isBold) sb.append(",B");
                 if (term.isTitle) sb.append(",T");
                 // DocID:TF,B,T|DocID:TF,B,T|DocID:TF,B,T...
@@ -47,8 +43,9 @@ public class Indexer {
         chunksCounter++;
 
     }
+
     /* helper function to create temp posting file*/
-    public  void createTempPostingFile() throws FileNotFoundException {
+    private void createTempPostingFile() throws FileNotFoundException {
         ArrayList<String> termsList = new ArrayList<>(currDocTerms.keySet());
         Collections.sort(termsList);
 
@@ -78,6 +75,61 @@ public class Indexer {
 
         pw.flush();
         pw.close();
+    }
+
+    /* merge all the temp files to one posting file*/
+    public void mergeSort(){
+        try {
+
+            PriorityQueue<ReaderForMerge> queue = new PriorityQueue<>(365, Comparator.comparing(o -> o.key));
+
+            //creating the final posting file
+            postingFilePath = ReadFile.postingsPath + "\\" + "PostingFile" + ".txt";
+            File posting_file = new File(postingFilePath);
+            if (posting_file.exists()) posting_file.delete();
+            PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(postingFilePath)));
+
+            //filling the priority queue
+            for (int i = 0; i < chunksCounter; i++) {
+                String path = ReadFile.postingsPath + "\\" + "temp" +"\\"+ i + ".txt";
+                File f = new File(path);
+                queue.add(new ReaderForMerge(new BufferedReader(new FileReader(f)), path));
+            }
+
+            if (!(queue.peek() == null)&&!(queue.peek().line == null)) {
+
+                ReaderForMerge reader = queue.poll();
+                writer.print(reader.line);
+                String lastTermWritten = reader.key;
+
+                while (queue.size() > 0) {
+                    reader = queue.poll();
+                    String nextTermToWrite = reader.key;
+                    if (nextTermToWrite.equals(lastTermWritten)) {
+                        writer.print(",");
+                        writer.print(reader.val);
+                    } else {
+                        lastTermWritten = nextTermToWrite;
+                        writer.println();
+                        writer.print(reader.line);
+                    }
+
+                    //read next line in the used temp posting file, if finish delete the file
+                    reader.reload();
+                    if (!(reader.line == null)) queue.add(reader);
+                    else {
+                        reader.close();
+                        reader.deleteFile();
+                    }
+                }
+
+                writer.close();
+            }
+        } catch(Exception e){e.printStackTrace();}
+
+        new File(ReadFile.postingsPath+"\\"+"temp").delete();
+        System.out.println("Size of Inverted Index file: " + new File(postingFilePath).length() + " [bytes]");
+
     }
 
 
