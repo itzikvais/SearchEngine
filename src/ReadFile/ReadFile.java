@@ -1,43 +1,60 @@
 package ReadFile;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
+import Parse.Parse;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class ReadFile {
 
-    public static String path = null;
-    public static String postingsPath = null;
-    public static ArrayList<String> docsBuffer = new ArrayList<>(); // buffer for one chunk of docs
-    //public int chunksNum;
+    private String corpusPath;
+    private String postingDirPath;
+    private ArrayList<String[]> docsBuffer; // buffer for one chunk of docs
+    private Parse parser;
 
-    public static void start() {
-        File[] dirs = new File(path).listFiles(File::isDirectory);
+    public ReadFile(String path, String postingsPath) {
+        this.corpusPath = path;
+        this.postingDirPath = postingsPath;
+        this.parser = new Parse();
+    }
+
+    public void start() {
+        File[] dirs = new File(corpusPath).listFiles(File::isDirectory);
         ArrayList<File> files = new ArrayList<>();
 
-        // add all the files from all the dirs to "files" arraylist
-        for (int i = 0; i < dirs.length; i++) {
-            File[] subfiles = dirs[i].listFiles(File::isFile);
-            for (int j = 0; j < subfiles.length; j++)
-                files.add(subfiles[j]);
+        //initial files ArrayList
+        for (File dir : dirs) {
+            File[] subFiles = dir.listFiles(File::isFile);
+            Collections.addAll(files, subFiles);
         }
 
-        //
+        //add all the docs from all the files in current chunk to docBuffer
         for (int i = 0; i < files.size(); i++) {
             try {
-                byte[] lines = Files.readAllBytes(files.get(i).toPath());
-                String text = new String(lines);
+                BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(files.get(i))));
+                String [] toDocBuffer = new String[4];
+                toDocBuffer[0] = files.get(i).getAbsolutePath();  // file path
 
-                String[] res = text.split("<DOC>");
-                for (int j = 0; j < res.length; j++) {
-                    if (!res[j].contains("<TEXT>"))
-                        continue; //if no <TEXT> tag - ignore
-                    docsBuffer.add(res[j]);
+                String line = br.readLine();
+                int lineNum = 1;
+                StringBuilder doc = new StringBuilder();
+
+                while(!line.contains("<DOC>")){
+                    line = br.readLine();
+                    lineNum++;
                 }
+                toDocBuffer[1] = String.valueOf(lineNum); // doc start line
+                while(!line.contains("</DOC>")){
+                    line = br.readLine();
+                    doc.append(line);
+                    lineNum++;
+                }
+                toDocBuffer[2] = String.valueOf(lineNum); // doc end line
+                toDocBuffer[3] = doc.toString(); // doc start line
 
+                docsBuffer.add(toDocBuffer);
                 if ((i + 1) % 10 == 0 || i == files.size() - 1) {
-                    clearDocsBuffer();
+                    prosesChunk();
                 }
 
             } catch (IOException ioException) {
@@ -45,18 +62,18 @@ public class ReadFile {
             }
         }
     }
-    private static void clearDocsBuffer() {
+    private void prosesChunk() {
         if (docsBuffer.isEmpty()) return;
 
-        //Parse.parse();
+//        parser.parse(docsBuffer);
 
         docsBuffer.clear();
     }
-    public static void setCorpusPath(String f){
-        path = new String(f);
+    public void setCorpusPath(String f){
+        corpusPath = f;
     }
 
-    public static void setPostingsPath(String f){
-        postingsPath = new String(f);
+    public void setPostingDirPath(String f){
+        postingDirPath = f;
     }
 }
