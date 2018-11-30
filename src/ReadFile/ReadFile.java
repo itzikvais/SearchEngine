@@ -15,7 +15,7 @@ public class ReadFile {
     public ReadFile(String path, String postingsPath) {
         this.corpusPath = path;
         this.postingDirPath = postingsPath;
-        this.parser = new Parse();
+        this.parser = new Parse(postingDirPath, docsBuffer);
     }
 
     public void start() {

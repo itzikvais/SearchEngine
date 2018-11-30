@@ -1,7 +1,10 @@
 package Indexer;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Stream;
 
 import ExternalClasses.Document;
 import ExternalClasses.ReaderForMerge;
@@ -9,9 +12,19 @@ import ExternalClasses.Term;
 import  ReadFile.*;
 
 public class Indexer {
+    private HashSet<Document> docsFromParser;
     private HashMap<String,StringBuilder> currDocTerms;
     private int chunksCounter;
-    private String postingFilePath;
+    private String postingDirPath; //from Parse
+    private String finalPostingFilePath;
+
+    public Indexer(String postingDirPath, HashSet<Document> docsFromParser) {
+        this.postingDirPath = postingDirPath;
+        this.finalPostingFilePath = this.postingDirPath + "\\" + "PostingFile" + ".txt";
+        this.currDocTerms = new HashMap<>();
+        this.docsFromParser = docsFromParser;
+
+    }
 
     /*Creates a temporary dictionary from entire documents in chunk*/
     public void createDicFromParsedDocs(HashSet<Document> docsFromParser) throws FileNotFoundException {
@@ -49,14 +62,14 @@ public class Indexer {
         ArrayList<String> termsList = new ArrayList<>(currDocTerms.keySet());
         Collections.sort(termsList);
 
-        String tempPostingDirPath = ReadFile.postingsPath +"\\"+"temp";
+        String tempPostingDirPath = postingDirPath +"\\"+"temp";
 
         //creating directory for temp posting files, this dic will removed after the final posting file will created
         File f = new File(tempPostingDirPath);
         if (!f.exists())
             f.mkdir();
 
-        //create a temp-posting-text-file for from all the docs in current chunk
+        //create a temp-posting-text-file from all the docs in current chunk
         File file = new File(tempPostingDirPath + "\\"  + chunksCounter + ".txt");
 
         PrintWriter pw = new PrintWriter(new FileOutputStream(file,true));
@@ -84,14 +97,13 @@ public class Indexer {
             PriorityQueue<ReaderForMerge> queue = new PriorityQueue<>(365, Comparator.comparing(o -> o.key));
 
             //creating the final posting file
-            postingFilePath = ReadFile.postingsPath + "\\" + "PostingFile" + ".txt";
-            File posting_file = new File(postingFilePath);
+            File posting_file = new File(finalPostingFilePath);
             if (posting_file.exists()) posting_file.delete();
-            PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(postingFilePath)));
+            PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(finalPostingFilePath)));
 
             //filling the priority queue
             for (int i = 0; i < chunksCounter; i++) {
-                String path = ReadFile.postingsPath + "\\" + "temp" +"\\"+ i + ".txt";
+                String path = finalPostingFilePath + "\\" + "temp" +"\\"+ i + ".txt";
                 File f = new File(path);
                 queue.add(new ReaderForMerge(new BufferedReader(new FileReader(f)), path));
             }
@@ -127,9 +139,60 @@ public class Indexer {
             }
         } catch(Exception e){e.printStackTrace();}
 
-        new File(ReadFile.postingsPath+"\\"+"temp").delete();
-        System.out.println("Size of Inverted Index file: " + new File(postingFilePath).length() + " [bytes]");
+        new File(postingDirPath +"\\"+"temp").delete();
+        System.out.println("Size of Inverted Index file: " + new File(finalPostingFilePath).length() + " [bytes]");
 
+    }
+
+    /*create dictionary file*/
+    public void createDictionary(){
+        File f = new File(finalPostingFilePath);
+        try (Stream<String> lines = Files.lines(Paths.get(finalPostingFilePath))){
+            lines.forEach((line)->{
+                String[] splitted = line.split("#");
+                String term = splitted[0];
+                String data = splitted[1];
+
+                String[] docs = data.split("|");
+
+                //dictionary data
+                int sumTF = 0;
+                for (int i=0;i<docs.length; i++){
+                    String[] docData = docs[i].split(",");
+                    String number = docData[0].split(":")[1];
+                    sumTF += Integer.parseInt(number);
+                }
+
+                if (sumTF>1){
+
+                    DictionaryEntry dicEntry = new DictionaryEntry(docs.length, sumTF, lineCounter);
+
+
+                    /*STUFF FOR CACHE*/
+                    if (terms.contains(term)){
+                        CacheEntry cacheEntry = new CacheEntry(term, lineCounter);
+                        if (docs.length>150){
+                            StringBuilder stringBuilder = new StringBuilder(200);
+                            for (int k=0; k<150; k++){
+                                stringBuilder.append(docs[k]);
+                                if (k+1<150) stringBuilder.append(",");
+                            }
+                            cacheEntry.data = new String(stringBuilder.toString());
+                        } else {
+                            cacheEntry.data = new String(data);
+                        }
+                        Cache.addEntry(term, cacheEntry);
+                        dicEntry.isCached = true;
+                    }
+
+                    Dictionary.md_Dictionary.put(term, dicEntry);
+                    /*END OF DICTIONARY & CACHE CREATION*/
+                }
+
+                lineCounter++;
+
+            });
+        } catch (IOException e){}
     }
 
 
