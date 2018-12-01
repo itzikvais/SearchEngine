@@ -7,7 +7,6 @@ import ExternalClasses.*;
 import java.util.regex.*;
 
 public class Parse {
-    private HashMap<String,Term> terms=new HashMap<String,Term>(  );//String for the termString and int for the number of return's
     private HashSet<String> conjuctions = new HashSet<String>();
     private HashMap<String,Integer> monthList=new HashMap<String,Integer>(  );
     private Document doc;
@@ -20,12 +19,13 @@ public class Parse {
     private static final Pattern UNWANTED_SYMBOLS = Pattern.compile("(?:|[\\[\\]{}()+/\\\\])");
     public Parse(){
         addConjuctions();//add all the conjuction to the HashSet
+        addMonths();
     }
     /**
      * add all the tags to an HashSet
      */
     public void setDocsBuffer(ArrayList<String[]> docsBuffer) {
-        this.docsBuffer = docsBuffer;
+        this.docsBuffer.addAll( docsBuffer );
     }
 
     /**
@@ -40,8 +40,12 @@ public class Parse {
             startLine=docProp[1];
             endLine=docProp[2];
             text=docProp[3];
-            text.replace( "<HEADLINE>","!H@ " );
-            text.replace( "</HEADLINE>","!/H@ " );
+            text.replace( "<TI>","!H@ " );
+            text.replace( "</TI>","!/H@ " );
+            text.replace( "<TEXT>","!T@ " );
+            text.replace( "</TEXT>","!/T@ " );
+            text.replace( "<DATE1>","!DA@ " );
+            text.replace( "<F P=104>","!F@ " );
             text.replace( "</<DOCNO>>","!D@ " );
             text.replaceAll("<.*?>", "");
             String [] lines=text.split( "\n" );
@@ -58,32 +62,50 @@ public class Parse {
      */
     private void parseLine(String[] line) {
         boolean title=false;
+        boolean parse=false;
         for (int i = 0; i <line.length ; i++) {
-            Matcher unwantedMatcher = UNWANTED_SYMBOLS.matcher(line[i]);
-            line[i] = unwantedMatcher.replaceAll("");
-            if(line[i].equals( "!D@" ))
-                doc=new Document( line[i+1],null,pathToFile,Integer.parseInt( startLine ),Integer.parseInt( endLine ) );
-            if(line[i].equals( "!H@" )) {
+            Matcher unwantedMatcher = UNWANTED_SYMBOLS.matcher( line[i] );
+            line[i] = unwantedMatcher.replaceAll( "" );
+            if (line[i].equals( "!F@" )) {
+                doc.setCityOfOrigin( line[i + 1] );
+            }
+            if (line[i].equals( "!D@" ))
+                doc = new Document( line[i + 1], pathToFile, Integer.parseInt( startLine ), Integer.parseInt( endLine ) );
+            if (line[i].equals( "!H@" )) {
                 title = true;
+                parse = true;
                 i++;
             }
-            if(line[i].equals( "!/H@>" )) {
+            if (line[i].equals( "!/H@>" )) {
                 title = false;
+                parse = false;
                 i++;
             }
-            if(!conjuctions.contains( line[i] ))
-                if ((i<line.length-4 &&line[i+3].equals( "dollars" )) && line[i+2].equals( "US" ) || (i<line.length-3 &&line[i+2].equals( "Dollars" ) ))
-            {
-               parsePrice( line[i],line[i+1],title );
-               if(line[i+2].equals( "Dollars" ))
-                   i=i+2;
-               else
-                   i=i+3;
+            if (line[i].equals( "!T@" )) {
+                parse = true;
+                i++;
             }
-                else if(i<line.length-1)
-                    parseTerm(line[i],line[i+1],title);
-                else
-                    parseTerm( line[i],null ,title);
+            if (line[i].equals( "!/T@>" )) {
+                parse = false;
+                i++;
+            }
+            if (line[i].equals( "!DA@" )){
+                String date= line[i+1]+"-"+monthList.get( line[i+2] )+"-"+line[i+3];
+                doc.date=date;
+            }
+            if (parse) {
+                if (!conjuctions.contains( line[i] ))
+                    if ((i < line.length - 4 && line[i + 3].equals( "dollars" )) && line[i + 2].equals( "US" ) || (i < line.length - 3 && line[i + 2].equals( "Dollars" ))) {
+                        parsePrice( line[i], line[i + 1], title );
+                        if (line[i + 2].equals( "Dollars" ))
+                            i = i + 2;
+                        else
+                            i = i + 3;
+                    } else if (i < line.length - 1)
+                        parseTerm( line[i], line[i + 1], title );
+                    else
+                        parseTerm( line[i], null, title );
+            }
         }
 
     }
@@ -169,7 +191,7 @@ public class Parse {
     private void addConjuctions() {
 
         try {
-            File file = new File( "conjuctions" );
+            File file = new File( "stop_words" );
             BufferedReader br = new BufferedReader( new FileReader( "conjuctions" ) );
             String st;
             while ((st = br.readLine()) != null){
@@ -189,13 +211,8 @@ public class Parse {
         }
     }
     private void addTerm(String term,boolean title){
-        if(terms.containsKey( term )){
-            terms.get( term ).tf=terms.get( term ).tf+1;
-        }
-        else{
-            Term t=new Term(term,false,false,title);
-            terms.put( term,t );
-        }
+        Term t=new Term(term,title);
+        doc.addTerm( t);
     }
     public static void main(String[] args) {
     }

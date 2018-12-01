@@ -6,13 +6,11 @@ public class Term {
     public String termString;
     public int tf;
     public boolean isTitle;
-    public boolean isBold;
-    public boolean isCity;
+//    public boolean isBold;
     public Pair<Integer,Integer> positionInDoc;
-    public Term(String term,boolean isBold, boolean isCity,boolean isTitle){
+    public Term(String term, boolean isTitle){
         termString=term;
-        this.isBold=isBold;
-        this.isCity=isCity;
+//      this.isBold=isBold;
         this.isTitle=isTitle;
         tf=1;
     }
