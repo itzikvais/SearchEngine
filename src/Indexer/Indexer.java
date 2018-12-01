@@ -100,8 +100,14 @@ public class Indexer {
     public void mergeSort(){
         try {
 
-            PriorityQueue<ReaderForMerge> queue = new PriorityQueue<>(Comparator.comparing(o -> o.key));
+            PriorityQueue<ReaderForMerge> queue = new PriorityQueue<>( new Comparator<ReaderForMerge>() {
+                @Override
+                public int compare(ReaderForMerge o1, ReaderForMerge o2) {
+                    if(isChangeNecessary(o1.key,o2.key)){
 
+                    }
+                }
+            });
             //creating the final posting file
             File posting_file = new File(finalPostingFilePath);
             if (posting_file.exists()) posting_file.delete();
@@ -128,8 +134,13 @@ public class Indexer {
                 while (queue.size() > 0) {
                     reader = queue.poll();
                     String nextTermToWrite = reader.key;
-                    if(isChangeNecessary(lastTermWritten,nextTermToWrite)){
+                    if(isChangeToUcNecessary(lastTermWritten,nextTermToWrite)){
                         reader.key = reader.key.toUpperCase();
+                        reader.line = reader.key+"#"+reader.val;
+                        nextTermToWrite = reader.key;
+                    }
+                    else if(isChangeToLcNecessary(lastTermWritten,nextTermToWrite){
+                        reader.key = reader.key.toLowerCase();
                         reader.line = reader.key+"#"+reader.val;
                         nextTermToWrite = reader.key;
                     }
@@ -191,10 +202,21 @@ public class Indexer {
         return s.charAt(0)==upperCaseString.charAt(0);
     }
 
-    /*helper function that check if we have to change the terms to upper case*/
-    private boolean isChangeNecessary(String s1, String s2){
-        if (!isFirstLatterCapital(s1) || !isFirstLatterCapital(s2))
-            return false;
-        return s1.toUpperCase().equals(s2.toUpperCase());
+    /*helper function that check if we have to change the second term to Upper case*/
+    private boolean isChangeToUcNecessary(String prev, String next){
+        if (prev.toUpperCase().equals(next.toUpperCase())) {
+            if (isFirstLatterCapital(prev))
+                return true;
+        }
+        return false;
+    }
+
+    /*helper function that check if we have to change the second term to Lower case*/
+    private boolean isChangeToLcNecessary(String prev, String next){
+        if (prev.toUpperCase().equals(next.toUpperCase())) {
+            if (!isFirstLatterCapital(prev) && isFirstLatterCapital(next))
+                return true;
+        }
+        return false;
     }
 }
