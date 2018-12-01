@@ -27,20 +27,28 @@ public class Indexer {
 
     }
 
+    public HashSet<Document> getDocsFromParser() {
+        return docsFromParser;
+    }
+
     public void setDocsFromParser(HashSet<Document> docsFromParser) {
         this.docsFromParser = docsFromParser;
     }
 
     /*Creates a temporary dictionary from entire documents in chunk*/
-    public void createDicFromParsedDocs() throws FileNotFoundException {
+    public void createTempPostingFileFromParsedDocs() throws FileNotFoundException {
 
         for (Document d : docsFromParser) {
+            Iterator<Map.Entry<Term, Integer>> iterator = d.docTermsAndCount.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry pair = iterator.next();
+                Term term = (Term)pair.getKey();
+                String termString = term.termString;
 
-            for (Term term : d.docTermsAndCount.keySet()) {
-                StringBuilder sb = currDocTerms.get(term.termString);
+                StringBuilder sb = currDocTerms.get(termString);
                 if (sb == null) {
                     sb = new StringBuilder();
-                    currDocTerms.put(term.termString, sb);
+                    currDocTerms.put(termString, sb);
                 }
                 if (sb.length() != 0) sb.append("|");
                 sb.append(d.getDocID());
@@ -77,6 +85,7 @@ public class Indexer {
 
         //create a temp-posting-text-file from all the docs in current chunk
         File file = new File(tempPostingDirPath + "\\"  + chunksCounter + ".txt");
+        if (file.exists()) file.delete();
 
         PrintWriter pw = new PrintWriter(new FileOutputStream(file,true));
         if (pw==null){
@@ -87,8 +96,8 @@ public class Indexer {
         //writing all the terms from "termList" to the temp file
         for (String term : termsList) {
             pw.println(term + "#" + currDocTerms.get(term).toString());
-            //term1#DocID:TF,B,T|DocID:TF,B,T|DocID:TF,B,T...\n
-            //term2#DocID:TF,B,T|DocID:TF,B,T|DocID:TF,B,T...\n
+            //term1#DocID:TF,T|DocID:TF,T|DocID:TF,T...\n
+            //term2#DocID:TF,T|DocID:TF,T|DocID:TF,T...\n
             // SORTED!
         }
 
