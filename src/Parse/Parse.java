@@ -4,6 +4,9 @@ import java.util.*;
 import java.io.*;
 import Parse.*;
 import ExternalClasses.*;
+
+import javax.print.Doc;
+import javax.print.attribute.standard.DocumentName;
 import java.util.regex.*;
 
 public class Parse {
@@ -14,8 +17,8 @@ public class Parse {
     private String pathToFile;
     private String startLine;
     private String endLine;
-    private ArrayList<String[]> docsBuffer;
-    private HashSet<Document> docsToIndexer;
+    private ArrayList<String[]> docsBuffer=new ArrayList<String[]>(  );
+    private HashSet<Document> docsToIndexer=new HashSet<Document>(  );
     private static final Pattern UNWANTED_SYMBOLS = Pattern.compile("(?:|[\\[\\]{}()+/\\\\])");
     public Parse(){
         addConjuctions();//add all the conjuction to the HashSet
@@ -40,18 +43,13 @@ public class Parse {
             startLine=docProp[1];
             endLine=docProp[2];
             text=docProp[3];
-            text.replace( "<TI>","!H@ " );
-            text.replace( "</TI>","!/H@ " );
-            text.replace( "<TEXT>","!T@ " );
-            text.replace( "</TEXT>","!/T@ " );
-            text.replace( "<DATE1>","!DA@ " );
-            text.replace( "<F P=104>","!F@ " );
-            text.replace( "</<DOCNO>>","!D@ " );
-            text.replaceAll("<.*?>", "");
+            text=text.replace( "<TI>","!H@ " ).replace( "</TI>","!/H@ " ).replace( "<TEXT>","!T@ " ).replace( "</TEXT>","!/T@ " ).replace( "<DATE1>","!DA@ " ).replace( "<F P=104>","!F@ " ).replace( "<DOCNO>","!D@ " ).replace( "</DOCNO>","!/D@ " );
+            text=text.replaceAll("<.*?>", "");
             String [] lines=text.split( "\n" );
             for (int j = 0; j <lines.length ; j++) {
-                parseLine( lines[i].split( "    " ) );
+                parseLine( lines[j].split("\\s+") );
             }
+            docsToIndexer.add( doc );
         }
         return docsToIndexer;
     }
@@ -66,34 +64,36 @@ public class Parse {
         for (int i = 0; i <line.length ; i++) {
             Matcher unwantedMatcher = UNWANTED_SYMBOLS.matcher( line[i] );
             line[i] = unwantedMatcher.replaceAll( "" );
-            if (line[i].equals( "!F@" )) {
+            if (i<line.length&&line[i].equals( "!F@" )) {
                 doc.setCityOfOrigin( line[i + 1] );
             }
-            if (line[i].equals( "!D@" ))
+            if (i<line.length&&line[i].equals( "!D@" )) {
                 doc = new Document( line[i + 1], pathToFile, Integer.parseInt( startLine ), Integer.parseInt( endLine ) );
-            if (line[i].equals( "!H@" )) {
+            }
+            if (i<line.length&&line[i].equals( "!H@" )) {
                 title = true;
-                parse = true;
+                //parse = true;
                 i++;
             }
-            if (line[i].equals( "!/H@>" )) {
+            if (i<line.length&&line[i].equals( "!/H@>" )) {
                 title = false;
-                parse = false;
+                //parse = false;
                 i++;
             }
-            if (line[i].equals( "!T@" )) {
+            if (i<line.length&&line[i].equals( "!T@" )) {
                 parse = true;
                 i++;
             }
-            if (line[i].equals( "!/T@>" )) {
+            if (i<line.length&&line[i].equals( "!/T@" )) {
                 parse = false;
                 i++;
             }
-            if (line[i].equals( "!DA@" )){
+            if (i<line.length&&line[i].equals( "!DA@" )){
                 String date= line[i+1]+"-"+monthList.get( line[i+2] )+"-"+line[i+3];
                 doc.date=date;
             }
             if (parse) {
+                line[i]=line[i].replaceAll("\\p{Punct}", ""  );
                 if (!conjuctions.contains( line[i] ))
                     if ((i < line.length - 4 && line[i + 3].equals( "dollars" )) && line[i + 2].equals( "US" ) || (i < line.length - 3 && line[i + 2].equals( "Dollars" ))) {
                         parsePrice( line[i], line[i + 1], title );
@@ -102,13 +102,14 @@ public class Parse {
                         else
                             i = i + 3;
                     } else if (i < line.length - 1)
-                        parseTerm( line[i], line[i + 1], title );
+                        i= parseTerm( line[i], line[i + 1], title,i );
                     else
-                        parseTerm( line[i], null, title );
+                       i= parseTerm( line[i], null, title,i );
             }
         }
 
     }
+
 
 
     private void parsePrice(String number, String amount,boolean title) {
@@ -141,21 +142,31 @@ public class Parse {
 
     }
 
-    private void parseTerm(String term,String nextTerm,boolean title) {
+    private int parseTerm(String term,String nextTerm,boolean title,int i) {
         String parseTerm="";
         if(term.charAt( term.length()-1 )=='%' || (nextTerm!=null && (nextTerm.equals( "percent" ) || nextTerm.equals( "percentage" )))) {
             parsePercent( term,title );
         }
-        else if(monthList.containsKey( term ) || (nextTerm!=null&&monthList.containsKey( nextTerm )) )
-            parseDate(term,nextTerm,title  );
-        else if(isNumeric( term.replace( ",","" ) ))
-            parseNumeric(term,nextTerm,title);
-        else if(term.contains( "$" )|| (nextTerm!=null && nextTerm.equals( "Dollars" )))
-            parsePrice(term,nextTerm,title);
+        else if(monthList.containsKey( term ) || (nextTerm!=null&&monthList.containsKey( nextTerm )) ) {
+            parseDate( term, nextTerm, title );
+            return i+1;
+        }
+        else if(isNumeric( term.replace( ",","" ) )) {
+            parseNumeric( term, nextTerm, title );
+            if(nextTerm.equals( "Billion" )||nextTerm.equals( "Trillion" )||nextTerm.equals( "Million" )||nextTerm.equals( "Thousand" ))
+                return i+1;
+            return i;
+        }
+        else if(term.contains( "$" )|| (nextTerm!=null && nextTerm.equals( "Dollars" ))) {
+            parsePrice( term, nextTerm, title );
+            return i+1;
+        }
         else if(term.contains( "-" )){
             parseRange(term,title);
         }
-
+        else
+            addTerm( term,title );
+        return i;
     }
 
     private void parseRange(String term,boolean title) {
@@ -196,6 +207,8 @@ public class Parse {
             String st;
             while ((st = br.readLine()) != null){
                 conjuctions.add( st );
+                st=st.substring(0, 1).toUpperCase() + st.substring(1);
+                conjuctions.add(st);
             }
         } catch (FileNotFoundException e) {
             System.out.println("file not found");
@@ -213,8 +226,6 @@ public class Parse {
     private void addTerm(String term,boolean title){
         Term t=new Term(term,title);
         doc.addTerm( t);
-    }
-    public static void main(String[] args) {
     }
 
 
