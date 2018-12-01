@@ -47,9 +47,8 @@ public class Indexer {
                 sb.append(":");
                 double normalizedTF = (double)d.docTermsAndCount.get(term) / (double)d.mostFreqTermVal;
                 sb.append(",").append(normalizedTF);
-                if (term.isBold) sb.append(",B");
                 if (term.isTitle) sb.append(",T");
-                // DocID:TF,B,T|DocID:TF,B,T|DocID:TF,B,T...
+                // DocID:TF,T|DocID:TF,T|DocID:TF,T...
 
             }
 
