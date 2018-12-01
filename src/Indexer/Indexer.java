@@ -103,23 +103,7 @@ public class Indexer {
             PriorityQueue<ReaderForMerge> queue = new PriorityQueue<>( new Comparator<ReaderForMerge>() {
                 @Override
                 public int compare(ReaderForMerge o1, ReaderForMerge o2) {
-                    String t1=o1.key;
-                    String t2=o2.key;
-                    if(t1.charAt(0)>=65&&t1.charAt(0)<=90){
-                        t1=t1.toLowerCase();
-                        if(t2.charAt(0)==t1.charAt(0)) {
-                            if (t2.equals(t1))
-                                return 1;
-                        }
-                    }
-                    else if(t2.charAt(0)>=65&&t2.charAt(0)<=90) {
-                        t2 = t2.toLowerCase();
-                        if (t2.charAt(0) == t1.charAt(0)) {
-                            if (t2.equals(t1))
-                                return -1;
-                        }
-                    }
-                    return t1.toLowerCase().compareTo(t2.toLowerCase());
+                    return o1.key.compareTo( o2.key );
                 }
             });
             //creating the final posting file
@@ -233,8 +217,4 @@ public class Indexer {
         }
         return false;
     }
-
-
-
-    }
-
+}

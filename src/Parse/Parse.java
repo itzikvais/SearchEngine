@@ -134,20 +134,24 @@ public class Parse {
             pd = new ParseDate( monthList.get( term ), Integer.parseInt( nextTerm ) );
             newTerm=pd.parse();
         }
-        else if(isNumeric( nextTerm )) {
+        else if( monthList.containsKey( nextTerm )&&isNumeric( term )){
             pd = new ParseDate( Integer.parseInt( term ), monthList.get( nextTerm ) );
             newTerm=pd.parse();
         }
+        if(newTerm==null)
+            System.out.println("its a check "+ term + nextTerm);
         addTerm( newTerm,title );
 
     }
 
     private int parseTerm(String term,String nextTerm,boolean title,int i) {
         String parseTerm="";
+        if(term.length()<=0)
+            return i;
         if(term.charAt( term.length()-1 )=='%' || (nextTerm!=null && (nextTerm.equals( "percent" ) || nextTerm.equals( "percentage" )))) {
             parsePercent( term,title );
         }
-        else if(monthList.containsKey( term ) || (nextTerm!=null&&monthList.containsKey( nextTerm )) ) {
+        else if(monthList.containsKey( term )&&isNumeric( nextTerm ) || (nextTerm!=null&&monthList.containsKey( nextTerm )&& isNumeric( term )) ) {
             parseDate( term, nextTerm, title );
             return i+1;
         }
