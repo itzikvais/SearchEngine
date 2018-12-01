@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 import ExternalClasses.Document;
 import ExternalClasses.ReaderForMerge;
 import ExternalClasses.Term;
-
+////////////////////////////////////////////////////////////////////////////////////
 public class Indexer {
     private HashSet<Document> docsFromParser;
     private HashMap<String,StringBuilder> currDocTerms;
