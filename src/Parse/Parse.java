@@ -10,23 +10,30 @@ public class Parse {
     private HashMap<String,Term> terms=new HashMap<String,Term>(  );//String for the termString and int for the number of return's
     private HashSet<String> conjuctions = new HashSet<String>();
     private HashMap<String,Integer> monthList=new HashMap<String,Integer>(  );
+    private Document doc;
     private String text;
     private String pathToFile;
     private String startLine;
     private String endLine;
+    private ArrayList<String[]> docsBuffer;
     private HashSet<Document> docsToIndexer;
     private static final Pattern UNWANTED_SYMBOLS = Pattern.compile("(?:|[\\[\\]{}()+/\\\\])");
-    public Parse(ArrayList<String[]> docsBuffer){
+    public Parse(){
         addConjuctions();//add all the conjuction to the HashSet
     }
     /**
      * add all the tags to an HashSet
      */
+    public void setDocsBuffer(ArrayList<String[]> docsBuffer) {
+        this.docsBuffer = docsBuffer;
+    }
+
     /**
      *
      * @return an HashMap of terms and how many time they appeared
      */
-    public HashSet<Document> parse(ArrayList<String[]> docsBuffer){
+
+    public HashSet<Document> parse(){
         for (int i = 0; i < docsBuffer.size(); i++) {
             String[] docProp=docsBuffer.get(0);
             pathToFile=docProp[0];
@@ -55,7 +62,7 @@ public class Parse {
             Matcher unwantedMatcher = UNWANTED_SYMBOLS.matcher(line[i]);
             line[i] = unwantedMatcher.replaceAll("");
             if(line[i].equals( "!D@" ))
-                //TODO:create a doc
+                doc=new Document( line[i+1],null,pathToFile,Integer.parseInt( startLine ),Integer.parseInt( endLine ) );
             if(line[i].equals( "!H@" )) {
                 title = true;
                 i++;
