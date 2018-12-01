@@ -101,7 +101,7 @@ public class Indexer {
     public void mergeSort(){
         try {
 
-            PriorityQueue<ReaderForMerge> queue = new PriorityQueue<>(365, Comparator.comparing(o -> o.key));
+            PriorityQueue<ReaderForMerge> queue = new PriorityQueue<>(Comparator.comparing(o -> o.key));
 
             //creating the final posting file
             File posting_file = new File(finalPostingFilePath);
@@ -118,6 +118,10 @@ public class Indexer {
             if (!(queue.peek() == null)&&!(queue.peek().line == null)) {
 
                 ReaderForMerge reader = queue.poll();
+                if(isFirstLatterCapital(reader.key)){
+                    reader.key = reader.key.toUpperCase();
+                    reader.line = reader.key+"#"+reader.val;
+                }
                 writer.print(reader.line);
                 totalUniqueTerms++;
                 String lastTermWritten = reader.key;
@@ -125,6 +129,11 @@ public class Indexer {
                 while (queue.size() > 0) {
                     reader = queue.poll();
                     String nextTermToWrite = reader.key;
+                    if(isChangeNecessary(lastTermWritten,nextTermToWrite)){
+                        reader.key = reader.key.toUpperCase();
+                        reader.line = reader.key+"#"+reader.val;
+                        nextTermToWrite = reader.key;
+                    }
                     if (nextTermToWrite.equals(lastTermWritten)) {
                         writer.print(",");
                         writer.print(reader.val);
@@ -143,7 +152,6 @@ public class Indexer {
                         reader.deleteFile();
                     }
                 }
-
                 writer.close();
             }
         } catch(Exception e){e.printStackTrace();}
@@ -178,5 +186,16 @@ public class Indexer {
         } catch (IOException e){}
     }
 
+    /*helper function that check if the first letter of a string is capital*/
+    private boolean isFirstLatterCapital (String s){
+        String upperCaseString = s.toUpperCase();
+        return s.charAt(0)==upperCaseString.charAt(0);
+    }
 
+    /*helper function that check if we have to change the terms to upper case*/
+    private boolean isChangeNecessary(String s1, String s2){
+        if (!isFirstLatterCapital(s1) || !isFirstLatterCapital(s2))
+            return false;
+        return s1.toUpperCase().equals(s2.toUpperCase());
+    }
 }
