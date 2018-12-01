@@ -9,43 +9,40 @@ import java.util.regex.*;
 public class Parse {
     private HashMap<String,Term> terms=new HashMap<String,Term>(  );//String for the termString and int for the number of return's
     private HashSet<String> conjuctions = new HashSet<String>();
-    private HashSet<String> tags=new HashSet<String>(  );
     private HashMap<String,Integer> monthList=new HashMap<String,Integer>(  );
     private String text;
-    private Document doc=null;
+    private String pathToFile;
+    private String startLine;
+    private String endLine;
+    private HashSet<Document> docsToIndexer;
     private static final Pattern UNWANTED_SYMBOLS = Pattern.compile("(?:|[\\[\\]{}()+/\\\\])");
-    public Parse(String postingDirPath,ArrayList<String[]> docsBuffer){
+    public Parse(ArrayList<String[]> docsBuffer){
         addConjuctions();//add all the conjuction to the HashSet
-        addTags();
     }
     /**
      * add all the tags to an HashSet
      */
-    private void addTags() {
-        tags.add( "<DOC>" );
-        tags.add("<TI>");
-        tags.add("<TEXT>");
-        tags.add("<PUB>");
-        tags.add( "</DOC>" );
-        tags.add("</TI>");
-        tags.add("</TEXT>");
-        tags.add("</PUB>");
-    }
-
     /**
      *
      * @return an HashMap of terms and how many time they appeared
      */
-    public HashSet<Term> parse(){
-        text.replace( "<HEADLINE>","!H@" );
-        text.replace( "</HEADLINE>","!/H@" );
-        text.replace( "</<DOCNO>>","!D@" );
-        text.replaceAll("<.*?>", "");
-        String [] lines=text.split( "\n" );
-        for (int i = 0; i <lines.length ; i++) {
-            parseLine( lines[i].split( "    " ) );
+    public HashSet<Document> parse(ArrayList<String[]> docsBuffer){
+        for (int i = 0; i < docsBuffer.size(); i++) {
+            String[] docProp=docsBuffer.get(0);
+            pathToFile=docProp[0];
+            startLine=docProp[1];
+            endLine=docProp[2];
+            text=docProp[3];
+            text.replace( "<HEADLINE>","!H@ " );
+            text.replace( "</HEADLINE>","!/H@ " );
+            text.replace( "</<DOCNO>>","!D@ " );
+            text.replaceAll("<.*?>", "");
+            String [] lines=text.split( "\n" );
+            for (int j = 0; j <lines.length ; j++) {
+                parseLine( lines[i].split( "    " ) );
+            }
         }
-        return null;
+        return docsToIndexer;
     }
 
     /**
@@ -57,6 +54,8 @@ public class Parse {
         for (int i = 0; i <line.length ; i++) {
             Matcher unwantedMatcher = UNWANTED_SYMBOLS.matcher(line[i]);
             line[i] = unwantedMatcher.replaceAll("");
+            if(line[i].equals( "!D@" ))
+                //TODO:create a doc
             if(line[i].equals( "!H@" )) {
                 title = true;
                 i++;
@@ -65,7 +64,7 @@ public class Parse {
                 title = false;
                 i++;
             }
-            if(!conjuctions.contains( line[i] ) && !tags.contains( line[i] ))
+            if(!conjuctions.contains( line[i] ))
                 if ((i<line.length-4 &&line[i+3].equals( "dollars" )) && line[i+2].equals( "US" ) || (i<line.length-3 &&line[i+2].equals( "Dollars" ) ))
             {
                parsePrice( line[i],line[i+1],title );
@@ -82,18 +81,6 @@ public class Parse {
 
     }
 
-    private int createDocument(String[] line) {
-        for (int i = 0; i <line.length ; i++) {
-            if(line[i].equals( "<DOC>" ))
-                i++;
-            if(line[i].equals( "<DOCNO>" )&&i<line.length-2){
-                //TODO: create doc
-                return i+3;
-            }
-
-        }
-        return 0;
-    }
 
     private void parsePrice(String number, String amount,boolean title) {
         if(isNumeric( number.replace( ",","" ).replace( "$","" ) ) && (amount.contains( "/" )||
@@ -204,8 +191,6 @@ public class Parse {
         }
     }
     public static void main(String[] args) {
-        Parse parse=new Parse(null,null);
-        parse.addMonths();
     }
 
 
