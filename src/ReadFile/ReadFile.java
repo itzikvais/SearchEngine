@@ -1,9 +1,14 @@
 package ReadFile;
 
-import Parse.Parse;
 import java.io.*;
 import java.util.ArrayList;
+
+import ExternalClasses.Document;
+import Parse.Parse;
 import java.util.Collections;
+import java.util.HashSet;
+
+import Indexer.Indexer;
 
 public class ReadFile {
 
@@ -11,11 +16,13 @@ public class ReadFile {
     private String postingDirPath;
     private ArrayList<String[]> docsBuffer; // buffer for one chunk of docs
     private Parse parser;
+    private Indexer indexer;
 
     public ReadFile(String path, String postingsPath) {
         this.corpusPath = path;
         this.postingDirPath = postingsPath;
-        this.parser = new Parse(docsBuffer);
+        this.parser = new Parse();
+        this.indexer = new Indexer(postingDirPath);
     }
 
     public void start() {
@@ -39,18 +46,18 @@ public class ReadFile {
                 int lineNum = 1;
                 StringBuilder doc = new StringBuilder();
 
-                while(!line.contains("<DOC>")){
+                while(!(line == null)&&(!line.contains("<DOC>"))){
                     line = br.readLine();
                     lineNum++;
                 }
                 toDocBuffer[1] = String.valueOf(lineNum); // doc start line
-                while(!line.contains("</DOC>")){
+                while(!(line == null)&&(!line.contains("</DOC>"))){
                     line = br.readLine();
                     doc.append(line);
                     lineNum++;
                 }
                 toDocBuffer[2] = String.valueOf(lineNum); // doc end line
-                toDocBuffer[3] = doc.toString(); // doc start line
+                toDocBuffer[3] = doc.toString(); // docText
 
                 docsBuffer.add(toDocBuffer);
                 if ((i + 1) % 10 == 0 || i == files.size() - 1) {
@@ -61,18 +68,24 @@ public class ReadFile {
                 System.out.println("Exception thrown in readFile start function!");
             }
         }
+        // *MERGESORT*
     }
-    private void prosesChunk() {
+    private void prosesChunk() throws FileNotFoundException {
         if (docsBuffer.isEmpty()) return;
 
-//        parser.parse(docsBuffer);
+        parser.setDocsBuffer(docsBuffer);
+        HashSet<Document> docsFromParse =  parser.parse();
+
+        indexer.setDocsFromParser(docsFromParse);
+        indexer.createDicFromParsedDocs();
+
 
         docsBuffer.clear();
     }
+
     public void setCorpusPath(String f){
         corpusPath = f;
     }
-
     public void setPostingDirPath(String f){
         postingDirPath = f;
     }

@@ -9,25 +9,30 @@ import java.util.stream.Stream;
 import ExternalClasses.Document;
 import ExternalClasses.ReaderForMerge;
 import ExternalClasses.Term;
-import  ReadFile.*;
 
 public class Indexer {
     private HashSet<Document> docsFromParser;
     private HashMap<String,StringBuilder> currDocTerms;
     private int chunksCounter;
-    private String postingDirPath; //from Parse
+    private String postingDirPath;
     private String finalPostingFilePath;
+    public static int totalDocsNum;
+    public static int totalUniqueTerms;
 
-    public Indexer(String postingDirPath, HashSet<Document> docsFromParser) {
+    public Indexer(String postingDirPath) {
         this.postingDirPath = postingDirPath;
         this.finalPostingFilePath = this.postingDirPath + "\\" + "PostingFile" + ".txt";
         this.currDocTerms = new HashMap<>();
-        this.docsFromParser = docsFromParser;
+        this.docsFromParser = new HashSet<>();
 
     }
 
+    public void setDocsFromParser(HashSet<Document> docsFromParser) {
+        this.docsFromParser = docsFromParser;
+    }
+
     /*Creates a temporary dictionary from entire documents in chunk*/
-    public void createDicFromParsedDocs(HashSet<Document> docsFromParser) throws FileNotFoundException {
+    public void createDicFromParsedDocs() throws FileNotFoundException {
 
         for (Document d : docsFromParser) {
 
@@ -45,11 +50,13 @@ public class Indexer {
                 if (term.isBold) sb.append(",B");
                 if (term.isTitle) sb.append(",T");
                 // DocID:TF,B,T|DocID:TF,B,T|DocID:TF,B,T...
+
             }
 
             d.docTermsAndCount.clear();
             d.docTermsAndCount = null;
             Document.docCollection.put(d.getDocID(), d);
+            totalDocsNum++;
         }
         createTempPostingFile();
         currDocTerms.clear();
@@ -103,15 +110,16 @@ public class Indexer {
 
             //filling the priority queue
             for (int i = 0; i < chunksCounter; i++) {
-                String path = finalPostingFilePath + "\\" + "temp" +"\\"+ i + ".txt";
-                File f = new File(path);
-                queue.add(new ReaderForMerge(new BufferedReader(new FileReader(f)), path));
+                String tempPostingFilesPath = finalPostingFilePath + "\\" + "temp" +"\\"+ i + ".txt";
+                File f = new File(tempPostingFilesPath);
+                queue.add(new ReaderForMerge(new BufferedReader(new FileReader(f)), tempPostingFilesPath));
             }
 
             if (!(queue.peek() == null)&&!(queue.peek().line == null)) {
 
                 ReaderForMerge reader = queue.poll();
                 writer.print(reader.line);
+                totalUniqueTerms++;
                 String lastTermWritten = reader.key;
 
                 while (queue.size() > 0) {
@@ -124,6 +132,7 @@ public class Indexer {
                         lastTermWritten = nextTermToWrite;
                         writer.println();
                         writer.print(reader.line);
+                        totalUniqueTerms++;
                     }
 
                     //read next line in the used temp posting file, if finish delete the file
@@ -163,33 +172,7 @@ public class Indexer {
                     sumTF += Integer.parseInt(number);
                 }
 
-                if (sumTF>1){
 
-                    DictionaryEntry dicEntry = new DictionaryEntry(docs.length, sumTF, lineCounter);
-
-
-                    /*STUFF FOR CACHE*/
-                    if (terms.contains(term)){
-                        CacheEntry cacheEntry = new CacheEntry(term, lineCounter);
-                        if (docs.length>150){
-                            StringBuilder stringBuilder = new StringBuilder(200);
-                            for (int k=0; k<150; k++){
-                                stringBuilder.append(docs[k]);
-                                if (k+1<150) stringBuilder.append(",");
-                            }
-                            cacheEntry.data = new String(stringBuilder.toString());
-                        } else {
-                            cacheEntry.data = new String(data);
-                        }
-                        Cache.addEntry(term, cacheEntry);
-                        dicEntry.isCached = true;
-                    }
-
-                    Dictionary.md_Dictionary.put(term, dicEntry);
-                    /*END OF DICTIONARY & CACHE CREATION*/
-                }
-
-                lineCounter++;
 
             });
         } catch (IOException e){}

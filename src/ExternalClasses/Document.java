@@ -62,7 +62,4 @@ public class Document {
         docLength++;
     }
 
-    public static long getNumberOfDocuments(){
-        return docCollection.size();
-    }
 }
