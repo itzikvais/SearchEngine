@@ -63,6 +63,7 @@ public class Parse {
         boolean title=false;
         boolean parse=false;
         for (int i = 0; i <line.length ; i++) {
+
             Matcher unwantedMatcher = UNWANTED_SYMBOLS.matcher( line[i] );
             line[i] = unwantedMatcher.replaceAll( "" );
             if (i<line.length&&line[i].equals( "!F@" )) {
@@ -73,12 +74,12 @@ public class Parse {
             }
             if (i<line.length&&line[i].equals( "!H@" )) {
                 title = true;
-                //parse = true;
+                parse = true;
                 i++;
             }
-            if (i<line.length&&line[i].equals( "!/H@>" )) {
+            if (i<line.length&&line[i].equals( "!/H@" )) {
                 title = false;
-                //parse = false;
+                parse = false;
                 i++;
             }
             if (i<line.length&&line[i].equals( "!T@" )) {
@@ -94,7 +95,7 @@ public class Parse {
                 doc.date=date;
             }
             if (parse) {
-                line[i]=line[i].replaceAll("\\p{Punct}", ""  );
+                line[i]=line[i].replaceAll("[\\p{Punct}&&[^-]]+", ""  );
                 if (!conjuctions.contains( line[i] ))
                     if ((i < line.length - 4 && line[i + 3].equals( "dollars" )) && line[i + 2].equals( "US" ) || (i < line.length - 3 && line[i + 2].equals( "Dollars" ))) {
                         parsePrice( line[i], line[i + 1], title );
@@ -149,7 +150,10 @@ public class Parse {
         String parseTerm="";
         if(term.length()<=0)
             return i;
-        if(term.charAt( term.length()-1 )=='%' || (nextTerm!=null && (nextTerm.equals( "percent" ) || nextTerm.equals( "percentage" )))) {
+        if(term.contains( "-" )){
+            parseRange(term,title);
+        }
+        else if(term.charAt( term.length()-1 )=='%' || (nextTerm!=null && (nextTerm.equals( "percent" ) || nextTerm.equals( "percentage" )))) {
             parsePercent( term,title );
             if((nextTerm!=null && (nextTerm.equals( "percent" ) || nextTerm.equals( "percentage" ))))
                 return i+1;
@@ -172,9 +176,6 @@ public class Parse {
             parsePrice( term, nextTerm, title );
             return i+1;
         }
-        else if(term.contains( "-" )){
-            parseRange(term,title);
-        }
         else
             addTerm( term,title );
         return i;
@@ -187,10 +188,12 @@ public class Parse {
     }
 
     private void parseRange(String term,boolean title) {
-        ParseRange pr=new ParseRange( term.split( "-" ) );
-        String[] parse= pr.parse();
-        for (int i = 0; i <parse.length ; i++) {
-            addTerm( parse[i],title );
+        if(!(term.length() <3)) {
+            ParseRange pr = new ParseRange( term.split( "-" ) );
+            String[] parse = pr.parse();
+            for (int i = 0; i < parse.length; i++) {
+                addTerm( parse[i], title );
+            }
         }
     }
 
