@@ -19,9 +19,11 @@ public class Parse {
     private ArrayList<String[]> docsBuffer=new ArrayList<String[]>(  );
     private HashSet<Document> docsToIndexer=new HashSet<Document>(  );
     private static final Pattern UNWANTED_SYMBOLS = Pattern.compile("(?:|[\\[\\]{}()+/\\\\])");
-    public Parse(){
+    private boolean toStem;
+    public Parse(boolean toStem){
         addConjuctions();//add all the conjuction to the HashSet
         addMonths();
+        this.toStem=toStem;
     }
     /**
      * add all the tags to an HashSet

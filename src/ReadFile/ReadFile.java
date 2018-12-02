@@ -29,6 +29,7 @@ public class ReadFile {
         this.dictionary = new HashMap<>();
     }
 
+
     public void start() {
         File[] dirs = new File(corpusPath).listFiles(File::isDirectory);
         ArrayList<File> files = new ArrayList<>();
@@ -103,7 +104,7 @@ public class ReadFile {
     }
 
     public static void main(String[] args) {
-        ReadFile rf=new ReadFile( "/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check" ,"/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check");
+        ReadFile rf=new ReadFile( "/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check" ,"/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check",false);
         rf.start();
     }
 }
