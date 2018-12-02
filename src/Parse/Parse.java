@@ -150,12 +150,18 @@ public class Parse {
             return i;
         if(term.charAt( term.length()-1 )=='%' || (nextTerm!=null && (nextTerm.equals( "percent" ) || nextTerm.equals( "percentage" )))) {
             parsePercent( term,title );
+            if((nextTerm!=null && (nextTerm.equals( "percent" ) || nextTerm.equals( "percentage" ))))
+                return i+1;
         }
         else if(monthList.containsKey( term )&&isNumeric( nextTerm ) || (nextTerm!=null&&monthList.containsKey( nextTerm )&& isNumeric( term )) ) {
             parseDate( term, nextTerm, title );
             return i+1;
         }
-        else if(isNumeric( term.replace( ",","" ) )) {
+        else if(isNumeric( term )&&(nextTerm!=null&&(nextTerm.equals( "m" )||nextTerm.equals( "mile" )||nextTerm.equals( "km" )))){
+            parseDistance(term,nextTerm,title);
+            return i+1;
+        }
+        else if(isNumeric( term )) {
             parseNumeric( term, nextTerm, title );
             if(nextTerm.equals( "Billion" )||nextTerm.equals( "Trillion" )||nextTerm.equals( "Million" )||nextTerm.equals( "Thousand" ))
                 return i+1;
@@ -171,6 +177,12 @@ public class Parse {
         else
             addTerm( term,title );
         return i;
+    }
+
+    private void parseDistance(String term, String nextTerm, boolean title) {
+        ParseDistance pd= new ParseDistance( Double.parseDouble( term ) ,nextTerm);
+        String newTerm=pd.parse();
+        addTerm( newTerm,title );
     }
 
     private void parseRange(String term,boolean title) {

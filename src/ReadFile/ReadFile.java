@@ -77,10 +77,10 @@ public class ReadFile {
         parser.setDocsBuffer(docsBuffer);
         HashSet<Document> docsFromParse =  parser.parse();
         System.out.println(docsFromParse.size());
-        System.out.println(docsFromParse.iterator().next().docTermsAndCount.size());
+        //System.out.println(docsFromParse.iterator().next().docTermsAndCount.size());
 
         indexer.setDocsFromParser(docsFromParse);
-        System.out.println(indexer.getDocsFromParser().iterator().next().docTermsAndCount.keySet().iterator().next().termString);
+        //System.out.println(indexer.getDocsFromParser().iterator().next().docTermsAndCount.keySet().iterator().next().termString);
         indexer.createTempPostingFileFromParsedDocs();
 
 
@@ -98,7 +98,7 @@ public class ReadFile {
         postingDirPath = f;
     }
     public static void main(String[] args) {
-        ReadFile rf=new ReadFile( "C:\\Users\\tsizer\\Documents\\לימודים\\שנה ג\\סמסטר א\\אחזור מידע\\מנוע\\corpusTest" ,"C:\\Users\\tsizer\\Documents\\לימודים\\שנה ג\\סמסטר א\\אחזור מידע\\מנוע\\postingFileCheck");
+        ReadFile rf=new ReadFile( "/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check" ,"/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check");
         rf.start();
     }
 }

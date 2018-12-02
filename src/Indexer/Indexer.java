@@ -37,10 +37,11 @@ public class Indexer {
 
     /*Creates a temporary dictionary from entire documents in chunk*/
     public void createTempPostingFileFromParsedDocs() throws FileNotFoundException {
-
         for (Document d : docsFromParser) {
+            System.out.println(d.docTermsAndCount.size());
             Iterator<Map.Entry<Term, Integer>> iterator = d.docTermsAndCount.entrySet().iterator();
             while (iterator.hasNext()) {
+                System.out.println("check");
                 Map.Entry pair = iterator.next();
                 Term term = (Term)pair.getKey();
                 String termString = term.termString;
@@ -112,7 +113,23 @@ public class Indexer {
             PriorityQueue<ReaderForMerge> queue = new PriorityQueue<>( new Comparator<ReaderForMerge>() {
                 @Override
                 public int compare(ReaderForMerge o1, ReaderForMerge o2) {
-                    return o1.key.compareTo( o2.key );
+                    String t1=o1.key;
+                    String t2=o2.key;
+                    if(t1.charAt(0)>=65&&t1.charAt(0)<=90){
+                        t1=t1.toLowerCase();
+                        if(t2.charAt(0)==t1.charAt(0)) {
+                            if (t2.equals(t1))
+                                return 1;
+                        }
+                    }
+                    else if(t2.charAt(0)>=65&&t2.charAt(0)<=90) {
+                        t2 = t2.toLowerCase();
+                        if (t2.charAt(0) == t1.charAt(0)) {
+                            if (t2.equals(t1))
+                                return -1;
+                        }
+                    }
+                    return t1.toLowerCase().compareTo(t2.toLowerCase());
                 }
             });
             //creating the final posting file
@@ -226,4 +243,7 @@ public class Indexer {
         }
         return false;
     }
+
+
+
 }
