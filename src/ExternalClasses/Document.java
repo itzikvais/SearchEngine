@@ -16,6 +16,7 @@ public class Document {
     public int mostFreqTermVal;
     private String cityOfOrigin;
     private int docLength;
+
     public Document(Document doc){
         this.docID = doc.docID;
         this.docTermsAndCount = doc.docTermsAndCount;

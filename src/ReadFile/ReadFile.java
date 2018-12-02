@@ -1,6 +1,5 @@
 package ReadFile;
 
-import ExternalClasses.DicEntry;
 import ExternalClasses.Document;
 import Indexer.Indexer;
 import Parse.Parse;
@@ -8,7 +7,6 @@ import Parse.Parse;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 
 public class ReadFile {
@@ -19,14 +17,12 @@ public class ReadFile {
     private Parse parser;
     private boolean toStem;
     private Indexer indexer;
-    public HashMap<String, DicEntry> dictionary;
 
     public ReadFile(String path, String postingsPath, boolean toStem) {
         this.corpusPath = path;
         this.postingDirPath = postingsPath;
         this.parser = new Parse(toStem);
         this.indexer = new Indexer(postingDirPath);
-        this.dictionary = new HashMap<>();
     }
 
 
@@ -104,7 +100,7 @@ public class ReadFile {
     }
 
     public static void main(String[] args) {
-        ReadFile rf=new ReadFile( "/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check" ,"/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check",false);
+        ReadFile rf=new ReadFile( "C:\\Users\\tsizer\\Documents\\לימודים\\שנה ג\\סמסטר א\\אחזור מידע\\מנוע\\corpusTest" ,"C:\\Users\\tsizer\\Documents\\לימודים\\שנה ג\\סמסטר א\\אחזור מידע\\מנוע\\postingFileCheck",false);
         rf.start();
     }
 }
