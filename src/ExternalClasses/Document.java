@@ -65,6 +65,8 @@ public class Document {
         }
         else {
             int val = docTermsAndCount.get(term) + 1;
+            docTermsAndCount.remove( term );
+            term.tf=val;
             docTermsAndCount.put(term,val);
             if (val > mostFreqTermVal) {
                 mostFreqTermVal = val;

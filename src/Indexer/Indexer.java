@@ -3,7 +3,6 @@ package Indexer;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.text.Format;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -19,6 +18,18 @@ public class Indexer {
     private String finalPostingFilePath;
     public static int totalDocsNum;
     public static int totalUniqueTerms;
+    PrintWriter writer;
+
+    {
+        try {
+            writer = new PrintWriter("/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check/FB396028/check.txt", "UTF-8");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public Indexer(String postingDirPath) {
         this.postingDirPath = postingDirPath;
@@ -36,18 +47,15 @@ public class Indexer {
         this.docsFromParser = docsFromParser;
     }
 
-    /* Creates a temporary dictionary from entire documents in chunk*/
+    /* Creates a temporary dictionary from entire documents in chunk */
     public void createTempPostingFileFromParsedDocs() throws FileNotFoundException {
         for (Document d : docsFromParser) {
             Iterator<Map.Entry<Term, Integer>> iterator = d.docTermsAndCount.entrySet().iterator();
             while (iterator.hasNext()) {
                 Map.Entry pair = iterator.next();
                 Term term = (Term)pair.getKey();
+                writer.println(term);
                 String termString = term.termString;
-                Integer count = (Integer)pair.getValue();
-                String isTitle = "";
-                if (term.isTitle) isTitle=",T";
-                System.out.println(termString +","+count+isTitle);
 
                 StringBuilder sb = currDocTerms.get(termString);
                 if (sb == null) {
@@ -57,10 +65,11 @@ public class Indexer {
                 if (sb.length() != 0) sb.append("|");
                 sb.append(d.getDocID());
                 sb.append(":");
-                sb.append(",").append(count);
+                double normalizedTF = (double)d.docTermsAndCount.get(term) / (double)d.mostFreqTermVal;
+                sb.append(",").append(normalizedTF);
                 if (term.isTitle) sb.append(",T");
                 // DocID:TF,T|DocID:TF,T|DocID:TF,T...
-                currDocTerms.put(termString,sb);
+
             }
 
             d.docTermsAndCount.clear();
@@ -68,6 +77,7 @@ public class Indexer {
             Document.docCollection.put(d.getDocID(), d);
             totalDocsNum++;
         }
+        writer.close();
         createTempPostingFile();
         currDocTerms.clear();
         chunksCounter++;
@@ -107,7 +117,6 @@ public class Indexer {
         pw.flush();
         pw.close();
     }
-
 
     /* merge all the temp files to one posting file */
     public void mergeSort(){

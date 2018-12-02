@@ -100,7 +100,7 @@ public class ReadFile {
     }
 
     public static void main(String[] args) {
-        ReadFile rf=new ReadFile( "C:\\Users\\tsizer\\Documents\\לימודים\\שנה ג\\סמסטר א\\אחזור מידע\\מנוע\\corpusTest" ,"C:\\Users\\tsizer\\Documents\\לימודים\\שנה ג\\סמסטר א\\אחזור מידע\\מנוע\\postingFileCheck",false);
+        ReadFile rf=new ReadFile( "/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check/" ,"/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check/FB396028",false);
         rf.start();
     }
 }
