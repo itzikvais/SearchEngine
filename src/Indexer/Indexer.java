@@ -3,6 +3,7 @@ package Indexer;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.Format;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -35,15 +36,18 @@ public class Indexer {
         this.docsFromParser = docsFromParser;
     }
 
-    /* Creates a temporary dictionary from entire documents in chunk */
+    /* Creates a temporary dictionary from entire documents in chunk*/
     public void createTempPostingFileFromParsedDocs() throws FileNotFoundException {
         for (Document d : docsFromParser) {
             Iterator<Map.Entry<Term, Integer>> iterator = d.docTermsAndCount.entrySet().iterator();
             while (iterator.hasNext()) {
                 Map.Entry pair = iterator.next();
                 Term term = (Term)pair.getKey();
-                System.out.println(term);
                 String termString = term.termString;
+                Integer count = (Integer)pair.getValue();
+                String isTitle = "";
+                if (term.isTitle) isTitle=",T";
+                System.out.println(termString +","+count+isTitle);
 
                 StringBuilder sb = currDocTerms.get(termString);
                 if (sb == null) {
@@ -53,11 +57,10 @@ public class Indexer {
                 if (sb.length() != 0) sb.append("|");
                 sb.append(d.getDocID());
                 sb.append(":");
-                double normalizedTF = (double)d.docTermsAndCount.get(term) / (double)d.mostFreqTermVal;
-                sb.append(",").append(normalizedTF);
+                sb.append(",").append(count);
                 if (term.isTitle) sb.append(",T");
                 // DocID:TF,T|DocID:TF,T|DocID:TF,T...
-
+                currDocTerms.put(termString,sb);
             }
 
             d.docTermsAndCount.clear();
@@ -104,6 +107,7 @@ public class Indexer {
         pw.flush();
         pw.close();
     }
+
 
     /* merge all the temp files to one posting file */
     public void mergeSort(){
