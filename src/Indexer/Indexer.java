@@ -35,7 +35,7 @@ public class Indexer {
         this.docsFromParser = docsFromParser;
     }
 
-    /*Creates a temporary dictionary from entire documents in chunk*/
+    /*Creates a temporary posting file from entire documents in chunk*/
     public void createTempPostingFileFromParsedDocs() throws FileNotFoundException {
 
         for (Document d : docsFromParser) {

@@ -1,14 +1,15 @@
 package ReadFile;
 
+import ExternalClasses.DicEntry;
+import ExternalClasses.Document;
+import Indexer.Indexer;
+import Parse.Parse;
+
 import java.io.*;
 import java.util.ArrayList;
-
-import ExternalClasses.Document;
-import Parse.Parse;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
-
-import Indexer.Indexer;
 
 public class ReadFile {
 
@@ -16,13 +17,16 @@ public class ReadFile {
     private String postingDirPath;
     private ArrayList<String[]> docsBuffer=new ArrayList<String[]>(  ); // buffer for one chunk of docs
     private Parse parser;
+    private boolean toStem;
     private Indexer indexer;
+    public HashMap<String, DicEntry> dictionary;
 
-    public ReadFile(String path, String postingsPath) {
+    public ReadFile(String path, String postingsPath, boolean toStem) {
         this.corpusPath = path;
         this.postingDirPath = postingsPath;
-        this.parser = new Parse();
+        this.parser = new Parse(toStem);
         this.indexer = new Indexer(postingDirPath);
+        this.dictionary = new HashMap<>();
     }
 
     public void start() {
@@ -97,6 +101,7 @@ public class ReadFile {
     public void setPostingDirPath(String f){
         postingDirPath = f;
     }
+
     public static void main(String[] args) {
         ReadFile rf=new ReadFile( "C:\\Users\\tsizer\\Documents\\לימודים\\שנה ג\\סמסטר א\\אחזור מידע\\מנוע\\corpusTest" ,"C:\\Users\\tsizer\\Documents\\לימודים\\שנה ג\\סמסטר א\\אחזור מידע\\מנוע\\postingFileCheck");
         rf.start();
