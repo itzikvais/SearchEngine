@@ -2,7 +2,6 @@ package Parse;
 import java.text.DateFormatSymbols;
 import java.util.*;
 import java.io.*;
-import Parse.*;
 import ExternalClasses.*;
 
 import javax.print.Doc;

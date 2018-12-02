@@ -35,15 +35,14 @@ public class Indexer {
         this.docsFromParser = docsFromParser;
     }
 
-    /*Creates a temporary dictionary from entire documents in chunk*/
+    /* Creates a temporary dictionary from entire documents in chunk */
     public void createTempPostingFileFromParsedDocs() throws FileNotFoundException {
         for (Document d : docsFromParser) {
-            System.out.println(d.docTermsAndCount.size());
             Iterator<Map.Entry<Term, Integer>> iterator = d.docTermsAndCount.entrySet().iterator();
             while (iterator.hasNext()) {
-                System.out.println("check");
                 Map.Entry pair = iterator.next();
                 Term term = (Term)pair.getKey();
+                System.out.println(term);
                 String termString = term.termString;
 
                 StringBuilder sb = currDocTerms.get(termString);
@@ -72,7 +71,7 @@ public class Indexer {
 
     }
 
-    /* helper function to create temp posting file*/
+    /* helper function to create temp posting file */
     private void createTempPostingFile() throws FileNotFoundException {
         ArrayList<String> termsList = new ArrayList<>(currDocTerms.keySet());
         Collections.sort(termsList);
@@ -106,7 +105,7 @@ public class Indexer {
         pw.close();
     }
 
-    /* merge all the temp files to one posting file*/
+    /* merge all the temp files to one posting file */
     public void mergeSort(){
         try {
 
@@ -195,7 +194,7 @@ public class Indexer {
 
     }
 
-    /*create dictionary file*/
+    /* create dictionary file */
     public void createDictionary(){
         File f = new File(finalPostingFilePath);
         try (Stream<String> lines = Files.lines(Paths.get(finalPostingFilePath))){
@@ -220,13 +219,13 @@ public class Indexer {
         } catch (IOException e){}
     }
 
-    /*helper function that check if the first letter of a string is capital*/
+    /* helper function that check if the first letter of a string is capital */
     private boolean isFirstLatterCapital (String s){
         String upperCaseString = s.toUpperCase();
         return s.charAt(0)==upperCaseString.charAt(0);
     }
 
-    /*helper function that check if we have to change the second term to Upper case*/
+    /* helper function that check if we have to change the second term to Upper case */
     private boolean isChangeToUcNecessary(String prev, String next){
         if (prev.toUpperCase().equals(next.toUpperCase())) {
             if (isFirstLatterCapital(prev))
@@ -235,7 +234,7 @@ public class Indexer {
         return false;
     }
 
-    /*helper function that check if we have to change the second term to Lower case*/
+    /* helper function that check if we have to change the second term to Lower case */
     private boolean isChangeToLcNecessary(String prev, String next){
         if (prev.toUpperCase().equals(next.toUpperCase())) {
             if (!isFirstLatterCapital(prev) && isFirstLatterCapital(next))

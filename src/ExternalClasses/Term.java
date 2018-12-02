@@ -17,6 +17,9 @@ public class Term {
     public boolean equals(Object o){
         return (o instanceof Term )&&((Term) o).termString.equals( this.termString );
     }
+    public String toString(){
+        return termString + " tf = " + tf;
+    }
     @Override
     public int hashCode() {
         return termString.hashCode();
