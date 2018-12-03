@@ -3,6 +3,7 @@ package Indexer;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.Format;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -18,6 +19,7 @@ public class Indexer {
     private String finalPostingFilePath;
     public static int totalDocsNum;
     public static int totalUniqueTerms;
+    public static int lineNum=1;
 
 
     public Indexer(String postingDirPath) {
@@ -52,8 +54,7 @@ public class Indexer {
                 if (sb.length() != 0) sb.append("|");
                 sb.append(d.getDocID());
                 sb.append(":");
-                double normalizedTF = (double)d.docTermsAndCount.get(term) / (double)d.mostFreqTermVal;
-                sb.append(",").append(normalizedTF);
+                sb.append(",").append(pair.getValue());
                 if (term.isTitle) sb.append(",T");
                 // DocID:TF,T|DocID:TF,T|DocID:TF,T...
 
@@ -188,20 +189,33 @@ public class Indexer {
             }
         } catch(Exception e){e.printStackTrace();}
 
+        //delete the temp posting files dir
         new File(postingDirPath +"\\"+"temp").delete();
         System.out.println("Size of Inverted Index file: " + new File(finalPostingFilePath).length() + " [bytes]");
 
     }
 
     /* create dictionary file */
-    public void createDictionary(){
-        File f = new File(finalPostingFilePath);
+    public void createDictionary() throws FileNotFoundException {
+        File file = new File(finalPostingFilePath + "documentsPostingFile"+".txt");
+        if (file.exists()) file.delete();
+
+        PrintWriter pw = new PrintWriter(new FileOutputStream(file,true));
+        if (pw==null){
+            System.out.println("Posting folder not found!! - Cannot create documentsPostingFile");
+            return;
+        }
+
         try (Stream<String> lines = Files.lines(Paths.get(finalPostingFilePath))){
             lines.forEach((line)->{
+                StringBuilder sb = new StringBuilder();
                 String[] splitted = line.split("#");
                 String term = splitted[0];
-                String data = splitted[1];
 
+                sb.append(term);
+                sb.append("#");
+
+                String data = splitted[1];
                 String[] docs = data.split("|");
 
                 //dictionary data
@@ -211,10 +225,25 @@ public class Indexer {
                     String number = docData[0].split(":")[1];
                     sumTF += Integer.parseInt(number);
                 }
+                sb.append(sumTF);
+                sb.append(",");
 
+                int df = docs.length;
+                sb.append(df);
+                sb.append(",");
 
+                double idf = Math.log10(totalDocsNum / df);
+                sb.append(idf);
+                sb.append(",");
 
+                sb.append(lineNum);
+                pw.println(sb.toString());
+                // term#sumTf,df,idf,lineNum
+
+                lineNum++;
             });
+            pw.flush();
+            pw.close();
         } catch (IOException e){}
     }
 
