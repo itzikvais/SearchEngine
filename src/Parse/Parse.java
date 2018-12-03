@@ -145,8 +145,6 @@ public class Parse {
             pd = new ParseDate( Integer.parseInt( term ), monthList.get( nextTerm ) );
             newTerm=pd.parse();
         }
-        if(newTerm==null)
-            System.out.println("its a check "+ term + nextTerm);
         addTerm( newTerm,title );
 
     }
@@ -158,12 +156,12 @@ public class Parse {
         if(term.contains( "-" )){
             parseRange(term,title);
         }
-        else if(term.charAt( term.length()-1 )=='%' || (nextTerm!=null && (nextTerm.equals( "percent" ) || nextTerm.equals( "percentage" )))) {
+        else if((term.charAt( term.length()-1 )=='%'&&isNumeric( term.substring( 0,term.length()-1 ) )) || (nextTerm!=null &&isNumeric (term)&&(nextTerm.equals( "percent" ) || nextTerm.equals( "percentage" )))) {
             parsePercent( term,title );
             if((nextTerm!=null && (nextTerm.equals( "percent" ) || nextTerm.equals( "percentage" ))))
                 return i+1;
         }
-        else if(monthList.containsKey( term )&&isNumeric( nextTerm ) || (nextTerm!=null&&monthList.containsKey( nextTerm )&& isNumeric( term )) ) {
+        else if(monthList.containsKey( term )&&isInteger( nextTerm ) || (nextTerm!=null&&monthList.containsKey( nextTerm )&& isInteger( term )) ) {
             parseDate( term, nextTerm, title );
             return i+1;
         }
@@ -196,8 +194,10 @@ public class Parse {
         if(!(term.length() <3)) {
             ParseRange pr = new ParseRange( term.split( "-" ) );
             String[] parse = pr.parse();
-            for (int i = 0; i < parse.length; i++) {
-                addTerm( parse[i], title );
+            if(parse!=null) {
+                for (int i = 0; i < parse.length; i++) {
+                    addTerm( parse[i], title );
+                }
             }
         }
     }
@@ -247,6 +247,17 @@ public class Parse {
             monthList.put( months[i],i );
             monthList.put( months[i].toUpperCase(),i );
         }
+    }
+    private static boolean isInteger(String s) {
+        try {
+            Integer.parseInt(s);
+        } catch(NumberFormatException e) {
+            return false;
+        } catch(NullPointerException e) {
+            return false;
+        }
+        // only got here if we didn't return false
+        return true;
     }
     private void addTerm(String term,boolean title){
         if(toStem){

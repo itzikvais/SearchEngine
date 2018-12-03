@@ -93,7 +93,7 @@ public class ReadFile {
     }
 
     public static void main(String[] args) {
-        ReadFile rf=new ReadFile( "/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check/" ,"/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check/FB396028",true);
+        ReadFile rf=new ReadFile( "/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/corpusTest" ,"/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check/FB396028",false);
         rf.start();
     }
 }

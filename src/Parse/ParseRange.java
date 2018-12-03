@@ -1,9 +1,9 @@
 package Parse;
 
 public class ParseRange {
-    private String[] range;
+    private String[] range=null;
     public ParseRange(String[] range){
-        if(range!=null)
+        if(range!=null&&range.length>=1)
             this.range=range;
 
     }
