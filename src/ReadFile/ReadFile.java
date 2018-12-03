@@ -17,17 +17,7 @@ public class ReadFile {
     private Parse parser;
     private boolean toStem;
     private Indexer indexer;
-    PrintWriter writer;
 
-    {
-        try {
-            writer = new PrintWriter("/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check/FB396028/check.txt", "UTF-8");
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-    }
     public ReadFile(String path, String postingsPath, boolean toStem) {
         this.corpusPath = path;
         this.postingDirPath = postingsPath;
@@ -87,10 +77,6 @@ public class ReadFile {
         HashSet<Document> docsFromParse =  parser.parse();
         indexer.setDocsFromParser(docsFromParse);
         indexer.createTempPostingFileFromParsedDocs();
-        for (Document d:docsFromParse) {
-            writer.write( d.toString() );
-        }
-        writer.close();
         docsBuffer=new ArrayList<String[]>(  );
         //docsBuffer.clear();
     }
@@ -107,7 +93,7 @@ public class ReadFile {
     }
 
     public static void main(String[] args) {
-        ReadFile rf=new ReadFile( "/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check/" ,"/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check/FB396028",false);
+        ReadFile rf=new ReadFile( "/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check/" ,"/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check/FB396028",true);
         rf.start();
     }
 }

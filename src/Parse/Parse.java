@@ -3,7 +3,7 @@ import java.text.DateFormatSymbols;
 import java.util.*;
 import java.io.*;
 import ExternalClasses.*;
-
+import Stemmer.Stemmer;
 import javax.print.Doc;
 import javax.print.attribute.standard.DocumentName;
 import java.util.regex.*;
@@ -16,6 +16,7 @@ public class Parse {
     private String pathToFile;
     private String startLine;
     private String endLine;
+    private Stemmer stem;
     private ArrayList<String[]> docsBuffer=new ArrayList<String[]>(  );
     private HashSet<Document> docsToIndexer=new HashSet<Document>(  );
     private static final Pattern UNWANTED_SYMBOLS = Pattern.compile("(?:|[\\[\\]{}()+/\\\\])");
@@ -24,6 +25,8 @@ public class Parse {
         addConjuctions();//add all the conjuction to the HashSet
         addMonths();
         this.toStem=toStem;
+        if(toStem)
+            stem= new Stemmer();
     }
     /**
      * add all the tags to an HashSet
@@ -246,6 +249,13 @@ public class Parse {
         }
     }
     private void addTerm(String term,boolean title){
+        if(toStem){
+            for (int i = 0; i <term.length() ; i++) {
+                stem.add(term.charAt( i ));
+            }
+            stem.stem();
+            term=stem.toString();
+        }
         Term t=new Term(term,title);
         doc.addTerm( t);
     }
