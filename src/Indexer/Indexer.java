@@ -18,17 +18,6 @@ public class Indexer {
     private String finalPostingFilePath;
     public static int totalDocsNum;
     public static int totalUniqueTerms;
-    PrintWriter writer;
-
-    {
-        try {
-            writer = new PrintWriter("/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check/FB396028/check.txt", "UTF-8");
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-    }
 
 
     public Indexer(String postingDirPath) {
@@ -54,9 +43,7 @@ public class Indexer {
             while (iterator.hasNext()) {
                 Map.Entry pair = iterator.next();
                 Term term = (Term)pair.getKey();
-                writer.println(term);
                 String termString = term.termString;
-
                 StringBuilder sb = currDocTerms.get(termString);
                 if (sb == null) {
                     sb = new StringBuilder();
@@ -77,7 +64,6 @@ public class Indexer {
             Document.docCollection.put(d.getDocID(), d);
             totalDocsNum++;
         }
-        writer.close();
         createTempPostingFile();
         currDocTerms.clear();
         chunksCounter++;

@@ -79,12 +79,14 @@ public class Document {
     @Override
     public String toString() {
         String toStr="DOC NUM:" + docID +"\n";
-        Iterator it = docTermsAndCount.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry pair = (Map.Entry)it.next();
-            Term t=(Term)pair.getKey();
-            toStr+=(t.termString + " = " + pair.getValue() +"\n");
-            it.remove(); // avoids a ConcurrentModificationException
+        if(docTermsAndCount!=null) {
+            Iterator it = docTermsAndCount.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry pair = (Map.Entry) it.next();
+                Term t = (Term) pair.getKey();
+                toStr += (t.termString + " = " + pair.getValue() + "\n");
+                it.remove(); // avoids a ConcurrentModificationException
+            }
         }
         return toStr;
     }

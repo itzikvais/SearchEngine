@@ -39,7 +39,7 @@ public class Parse {
 
     public HashSet<Document> parse(){
         for (int i = 0; i < docsBuffer.size(); i++) {
-            String[] docProp=docsBuffer.get(0);
+            String[] docProp=docsBuffer.get(i);
             pathToFile=docProp[0];
             startLine=docProp[1];
             endLine=docProp[2];
@@ -51,6 +51,7 @@ public class Parse {
                 parseLine( lines[j].split("\\s+") );
             }
             docsToIndexer.add( doc );
+            doc=null;
         }
         return docsToIndexer;
     }
@@ -71,6 +72,7 @@ public class Parse {
             }
             if (i<line.length&&line[i].equals( "!D@" )) {
                 doc = new Document( line[i + 1], pathToFile, Integer.parseInt( startLine ), Integer.parseInt( endLine ) );
+                i++;
             }
             if (i<line.length&&line[i].equals( "!H@" )) {
                 title = true;

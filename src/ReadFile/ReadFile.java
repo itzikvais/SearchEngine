@@ -17,7 +17,17 @@ public class ReadFile {
     private Parse parser;
     private boolean toStem;
     private Indexer indexer;
+    PrintWriter writer;
 
+    {
+        try {
+            writer = new PrintWriter("/Users/itzikvais/Documents/מערכות מידע/שנה ג/איחזור/check/FB396028/check.txt", "UTF-8");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+    }
     public ReadFile(String path, String postingsPath, boolean toStem) {
         this.corpusPath = path;
         this.postingDirPath = postingsPath;
@@ -39,13 +49,12 @@ public class ReadFile {
         for (int i = 0; i < files.size(); i++) {
             try {
                 BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(files.get(i))));
-                String [] toDocBuffer = new String[4];
-                toDocBuffer[0] = files.get(i).getAbsolutePath();  // file path
                 String line ;
+                int lineNum = 1;
                 while ((line = br.readLine()) != null) {
-                    int lineNum = 1;
                     StringBuilder doc = new StringBuilder();
-
+                    String [] toDocBuffer = new String[4];
+                    toDocBuffer[0] = files.get(i).getAbsolutePath();  // file path
                     while (!(line == null) && (!line.contains( "<DOC>" ))) {
                         line = br.readLine();
                         lineNum++;
@@ -58,8 +67,8 @@ public class ReadFile {
                     }
                     toDocBuffer[2] = String.valueOf( lineNum ); // doc end line
                     toDocBuffer[3] = doc.toString(); // docText
-
-                    docsBuffer.add( toDocBuffer );
+                    if(doc.length()!=0)
+                        docsBuffer.add( toDocBuffer );
                 }
                 if ((i + 1) % 10 == 0 || i == files.size() - 1) {
                     prosesChunk();
@@ -74,18 +83,16 @@ public class ReadFile {
     }
     private void prosesChunk() throws FileNotFoundException {
         if (docsBuffer.isEmpty()) return;
-
         parser.setDocsBuffer(docsBuffer);
         HashSet<Document> docsFromParse =  parser.parse();
-        System.out.println(docsFromParse.size());
-        //System.out.println(docsFromParse.iterator().next().docTermsAndCount.size());
-
         indexer.setDocsFromParser(docsFromParse);
-        //System.out.println(indexer.getDocsFromParser().iterator().next().docTermsAndCount.keySet().iterator().next().termString);
         indexer.createTempPostingFileFromParsedDocs();
-
-
-        docsBuffer.clear();
+        for (Document d:docsFromParse) {
+            writer.write( d.toString() );
+        }
+        writer.close();
+        docsBuffer=new ArrayList<String[]>(  );
+        //docsBuffer.clear();
     }
 
     private void printDoc(HashSet<Document> docsFromParse) {
