@@ -11,8 +11,6 @@ public class ParseNumber implements IParse {
      * @param amount Thousand Million Billion or Trillion
      */
     public ParseNumber(String number, String amount){
-        if(number.contains( "z" )||number.contains( "Z" ))
-            System.out.println("whyyyyyyy");
         this.number=number;
         this.amount=amount;
         if(this.number.contains( "," ))
