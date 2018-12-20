@@ -192,7 +192,7 @@ public class Indexer {
         sb.append(d.getDocLength());sb.append("#");
 
         int counter = 1;
-        ArrayList<String> docEntities = d.getEntities;
+        ArrayList<String> docEntities = d.getEntities();
         for (String entity : docEntities){
             if(!entities.contains(entity)) continue;
             if (counter <= 5){
