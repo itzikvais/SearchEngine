@@ -11,10 +11,18 @@ public class ParseNumber implements IParse {
      * @param amount Thousand Million Billion or Trillion
      */
     public ParseNumber(String number, String amount){
+        if(number.contains( "z" )||number.contains( "Z" ))
+            System.out.println("whyyyyyyy");
         this.number=number;
         this.amount=amount;
         if(this.number.contains( "," ))
             this.number=this.number.replace( ",","" );
+        /*
+        if(this.number.contains( "." ))
+            this.number="" +Double.parseDouble( this.number );
+        else
+            this.number="" +Integer.parseInt( this.number );
+            */
         if(number!=null && number.charAt( 0 )=='-'){
             this.number=this.number.substring( 1 );
             negative=true;
@@ -58,26 +66,35 @@ public class ParseNumber implements IParse {
      */
     private void representationNumber() {
         double num=Double.parseDouble( number );
-        if(num>1000 && num<1000000) {
+        if(num>=1000 && num<1000000) {
             num/=1000;
+            if(num%1>0)
+                number=String.format("%.2f", num);
             if(num%1==0)
                 number =(int)num  + "K";
             else
-                number = num + "K";
+                number = number + "K";
         }
-        else if(num>1000000&&num<1000000000){
+        else if(num>=1000000&&num<1000000000){
             num/=1000000;
             if(num%1==0)
                 number =(int)num  + "M";
-            else
-                number = num + "M";
+            else {
+                number = String.format("%.2f", num) + "M";
+            }
         }
-        else if(num>1000000000){
+        else if(num>=1000000000){
             num/=1000000000;
             if(num%1==0)
                 number =(int)num  + "B";
             else
-                number = num + "B";
+                number = String.format("%.2f", num) + "B";
+        }
+        else{
+            if(num%1==0)
+                number=""+(int)num;
+            else
+                number=String.format("%.2f", num);
         }
         //checkNumAfterDot();
     }

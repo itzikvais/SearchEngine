@@ -1,7 +1,4 @@
 BorderPane{
-    -fx-background-image:url("HideAndSeek.jpg") ;
-    -fx-background-repeat: no-repeat;
-    -fx-background-size: cover;
 }
 Button{
     -fx-background-color: white;

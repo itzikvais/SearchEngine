@@ -1,31 +1,64 @@
 package Controller;
 
-import Model.*;
+
+import Model.Model;
+import Model.ModelInt;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
+import javafx.scene.Group;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ComboBox;
+import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.ButtonType;
-import javafx.scene.image.*;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Optional;
 
 public class Controller implements Observer {
     ModelInt myModel;
+    private boolean stem = false;
+    private double time;
     public javafx.scene.control.Button closeButton;
-    private ImageView myImageView ;
+    public javafx.scene.control.Button btn_start;
+    public javafx.scene.control.Button btn_reset;
+    public javafx.scene.control.Button btn_shDic;
+    public javafx.scene.control.Button btn_loadDic;
+    public javafx.scene.control.CheckBox stemmer;
+    private HashSet<String> languages;
+    public boolean start;
+    public boolean reset;
+    private Group group;
+    public int uniqueTerms;
+    public int numOfDocs;
+    private String dictionary;
+    private Stage primaryStage;
+    public javafx.scene.control.TextField txtfld_corpus;
+    public javafx.scene.control.TextField txtfld_path;
+    private boolean load;
+
     public Controller( ) {
         myModel=null;
     }
+
+    public void setPrimaryStage(Stage primaryStage) {
+        this.primaryStage = primaryStage;
+    }
+
     public void SetModel(ModelInt model){
         this.myModel=model;
     }
@@ -33,11 +66,136 @@ public class Controller implements Observer {
     //public StringProperty password = new SimpleStringProperty();
     @Override
     public void update(Observable o, Object arg) {
-    }
-    public void initialize() { // or in an event handler, or when you externally set the image, etc
-       // Path imageFile = Paths.get("/path/to/image/file");
-       // myImageView.setImage(new Image(imageFile.toUri().toURL().toExternalForm()));
+        if(o==myModel){
+            if(reset){
+                reset=false;
+                btn_start.setDisable( false );
+                btn_reset.setDisable( true );
+                btn_shDic.setDisable( true );
+                btn_loadDic.setDisable( true );
+                Alert result = new Alert(Alert.AlertType.INFORMATION);
+                result.setHeaderText("All files has been deleted");
+                result.showAndWait();
+            }
+            else if(load){
+                load=true;
+                btn_start.setDisable( false );
+                btn_reset.setDisable( false );
+                btn_shDic.setDisable( false );
+                btn_loadDic.setDisable( false );
+            }
 
+        }
+    }
+
+    private void createLanguageDropDawn() {
+        Label languageLabel = new Label("Languages:");
+        ComboBox<String> language = new ComboBox<String>();
+        language.setEditable(true);
+        addLanguages(language);
+        VBox form = new VBox(20);
+        HBox languageHbox = new HBox(25);
+        language.setPrefWidth( 230 );
+        languageHbox.getChildren().addAll(languageLabel, language);
+        form.getChildren().addAll( languageHbox );
+        form.setLayoutX( 138 );
+        form.setLayoutY( 356 );
+        group=new Group( group,form );
+        Scene scene = new Scene(group, 800, 700);
+        scene.getStylesheets().add("/View/MyStyle.css");
+        primaryStage.setScene( scene );
+        primaryStage.show();
+
+    }
+
+    private void addLanguages(ComboBox<String> language) {
+        for (String lang:languages) {
+            language.getItems().add(lang);
+        }
+    }
+
+    public void chooseCorpusFolder(ActionEvent actionEvent){
+        try {
+            DirectoryChooser dirChooser = new DirectoryChooser();
+            dirChooser.setTitle( "Select a folder" );
+            File selectedDir = dirChooser.showDialog( primaryStage );
+            String dirName = String.valueOf( selectedDir );
+            txtfld_corpus.setText( dirName );
+        }
+        catch (Exception e){
+            System.out.println("problem in corpus");
+        }
+    }
+    public void chooseDestinationFolder(ActionEvent actionEvent){
+        try {
+            DirectoryChooser dirChooser = new DirectoryChooser();
+            dirChooser.setTitle( "Select a folder" );
+            File selectedDir = dirChooser.showDialog( primaryStage );
+            String dirName = String.valueOf( selectedDir );
+            txtfld_path.setText( dirName );
+        }
+        catch (Exception e){
+            System.out.println("problem in files destination");
+        }
+
+    }
+    public void start(ActionEvent actionEvent) {
+        try {
+            time=System.nanoTime()*Math.pow(10,-9);
+            btn_start.setDisable( true );
+            btn_reset.setDisable( true );
+            btn_shDic.setDisable( true );
+            btn_loadDic.setDisable( true );
+            if (txtfld_corpus.getText().length() == 0 || txtfld_path.getText().length() == 0) {
+                Alert result = new Alert( Alert.AlertType.WARNING );
+                result.setHeaderText( "Missing information" );
+                result.setContentText( "Please fill corpus path and files path" );
+                result.showAndWait();
+                btn_start.setDisable( false );
+                return;
+            }
+
+            if (stemmer.isSelected()) {
+                stem = true;
+            }
+            else
+                stem=false;
+            start = true;
+            languages=myModel.start( txtfld_corpus.getText(), txtfld_path.getText(), stem );
+            endIndexer();
+        }
+        catch (Exception e){
+            System.out.println("problem with start button");
+        }
+    }
+
+    private void endIndexer() {
+        if(start){
+            start=false;
+            btn_start.setDisable( false );
+            btn_reset.setDisable( false );
+            btn_shDic.setDisable( false );
+            btn_loadDic.setDisable( false );
+            createLanguageDropDawn();
+            Alert result = new Alert(Alert.AlertType.INFORMATION);
+            time=System.nanoTime()*Math.pow(10,-9)-time;
+            time=time/60;
+            result.setHeaderText("Indexing done in " + String.format("%.3f", time) + " minutes!");
+            result.setContentText("number of documents: "+ numOfDocs +"\n" + "number of unique terms: " +uniqueTerms);
+            result.showAndWait();
+        }
+    }
+
+    public void reset(ActionEvent actionEvent) {
+        try {
+            btn_start.setDisable( true );
+            btn_reset.setDisable( true );
+            reset = true;
+            myModel.reset();
+        }
+        catch (Exception e) {
+            System.out.println("problem with reset button");
+        }
     }
 
     public void exit(ActionEvent actionEvent) {
@@ -55,22 +213,61 @@ public class Controller implements Observer {
         scene.widthProperty().addListener(new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observableValue, Number oldSceneWidth, Number newSceneWidth) {
-                System.out.println("Width: " + newSceneWidth);
             }
         });
         scene.heightProperty().addListener(new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observableValue, Number oldSceneHeight, Number newSceneHeight) {
-                System.out.println("Height: " + newSceneHeight);
             }
         });
     }
-
+    public void showDictionary(ActionEvent actionEvent){
+        String dic=myModel.showDictionary();
+        if(dic==null){
+            Alert result = new Alert( Alert.AlertType.WARNING );
+            result.setHeaderText( "Cannot find dictionary file" );
+            result.showAndWait();
+        }
+        else {
+            TextArea textArea = new TextArea( dic );
+            textArea.setEditable( false );
+            FXMLLoader fxmlLoader = new FXMLLoader();
+            fxmlLoader.setLocation( getClass().getResource( "/View/dictionary.fxml" ) );
+            Scene scene = null;
+            try {
+                scene = new Scene( fxmlLoader.load(), 800, 700 );
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            textArea.setEditable(false);
+            Stage stage = new Stage();
+            stage.setScene( scene );
+            stage.setScene( new Scene( textArea ) );
+            stage.show();
+        }
+    }
+    public void loadDictionary(ActionEvent actionEvent){
+        btn_start.setDisable( true );
+        btn_reset.setDisable( true );
+        btn_shDic.setDisable( true );
+        btn_loadDic.setDisable( true );
+        load=true;
+        if(stemmer.isSelected())
+           myModel.loadDictionary(true);
+        else
+            myModel.loadDictionary(false);
+    }
 
     public void closeButtonAction(ActionEvent actionEvent) {
         Stage stage = (Stage) closeButton.getScene().getWindow();
         stage.close();
     }
-    public void start(ActionEvent actionEvent) {
+
+    public void setModel(Model model) {
+        myModel=model;
+    }
+
+    public void setGroup(Group group) {
+        this.group=group;
     }
 }

@@ -10,9 +10,17 @@ public class ParseDistance implements IParse {
     @Override
     public String parse()
     {
-        if(number>1000&&distance.equals( "m" ))
-            return number/1000 + " km";
+        if(distance==null)
+            return "";
+        if(number>1000&&(distance.equals( "m" )||distance.equals( "meters" )))
+            return number/1000 + "km";
+        else if(distance.equals( "m" )||distance.equals( "meters" ))
+            return number+"m";
+        else if(distance.equals( "km" )||distance.equals( "kilometers" ))
+            return number+"km";
+        else if(distance.equals( "miles" ))
+            return number*1.609344 +"km";
         else
-            return number + " " + distance;
+            return number  + distance;
     }
 }
