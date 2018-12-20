@@ -1,5 +1,6 @@
 package ExternalClasses;
 
+import javax.lang.model.type.ArrayType;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -14,6 +15,7 @@ public class Document {
     private int startLine;
     private int endLine;
     public HashMap<Term, Integer> docTermsAndCount;
+    private ArrayList<String> entities;
     private String date;
     private int uniqueTermsCounter;
     private String mostFreqTerm;
@@ -46,6 +48,7 @@ public class Document {
         this.filePath = filePath;
         this.startLine = startLine;
         this.endLine = endLine;
+        this.entities=new ArrayList<String>(  );
     }
 
     public int getNumOfCityLocations() {
@@ -155,8 +158,24 @@ public class Document {
     }
 
 
+    public void sort() {
 
+        Object[] a = docTermsAndCount.entrySet().toArray();
+        Arrays.sort(a, new Comparator() {
+            public int compare(Object o1, Object o2) {
+                return ((Map.Entry<Term, Integer>) o2).getValue()
+                        .compareTo(((Map.Entry<Term, Integer>) o1).getValue());
+            }
+        });
+        for (Object e : a) {
+            String term=((HashMap.Entry<Term, Integer>) e).getKey().termString;
+            if(term.charAt( 0 )>='A'&&term.charAt( 0 )<='Z') {
+                entities.add( term );
+            }
+        }
+    }
 
-
-
+    public ArrayList<String> getEntities() {
+        return entities;
+    }
 }

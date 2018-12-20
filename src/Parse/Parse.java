@@ -67,6 +67,7 @@ public class Parse {
             }
 
             mergeTerms();
+            doc.sort();
             docsToIndexer.add( doc );
             doc=null;
         }
