@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
-import static Indexer.Indexer.printData;
 
 public class ReadFile {
     private String swPath;
@@ -19,7 +18,9 @@ public class ReadFile {
     private ArrayList<String[]> docsBuffer=new ArrayList<String[]>(  ); // buffer for one chunk of docs
     private Indexer indexer;
     private int chunknum=0;
+    private int totalTerms = 0;
     private PrintWriter documentsFilePW;
+    private PrintWriter entitiesFilePW;
 
     public ReadFile(String path, String postingsPath) {
         this.swPath=path;
@@ -51,7 +52,6 @@ public class ReadFile {
         //create document posting file
         File documentsFile = new File(postingDirPath + "\\" + "documentsFile" + ".txt");
         if (documentsFile.exists()) documentsFile.delete();
-
         try {
             documentsFilePW = new PrintWriter(new FileOutputStream(documentsFile, true));
         } catch (FileNotFoundException e) {
@@ -59,6 +59,18 @@ public class ReadFile {
         }
         if (documentsFilePW == null) {
             System.out.println("Posting folder not found!! - Cannot create DocsPostingFile");
+            return null;
+        }
+        //create entities file
+        File entitiesFile = new File(postingDirPath + "\\" + "entitiesFile" + ".txt");
+        if (entitiesFile.exists()) documentsFile.delete();
+        try {
+            entitiesFilePW = new PrintWriter(new FileOutputStream(entitiesFile, true));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        if (entitiesFilePW == null) {
+            System.out.println("Posting folder not found!! - Cannot create entitiesFile");
             return null;
         }
 
@@ -97,7 +109,7 @@ public class ReadFile {
                         docsBuffer.add( toDocBuffer );
                 }
                 if ((i + 1) % 50 == 0 || i == files.size() - 1) {
-                    prosesChunk(documentsFilePW, toStem);
+                    prosesChunk(documentsFilePW, entitiesFilePW, toStem);
                 }
 
             /*} catch (IOException ioException) {
@@ -112,7 +124,6 @@ public class ReadFile {
         indexer.mergeSort();
         try {
             indexer.createDictionary();
-            indexer.createDictionaryForReport();
             indexer.createCityFile();
             indexer.howManyNumbersTerms();
             //printData();
@@ -122,15 +133,18 @@ public class ReadFile {
 
         return indexer.getLanguages();
     }
-    private void prosesChunk(PrintWriter documentsFilePW, boolean toStem) throws FileNotFoundException {
+    private void prosesChunk(PrintWriter documentsFilePW,PrintWriter entitiesFilePW, boolean toStem) throws FileNotFoundException {
         Parse parser=new Parse( swPath,toStem );
         if (docsBuffer.isEmpty()) return;
         System.out.println("check" + chunknum);
         chunknum++;
         parser.setDocsBuffer(docsBuffer);
         HashSet<Document> docsFromParse =  parser.parse();
+        for (Document d : docsFromParse){
+            totalTerms+=d.getDocLength();
+        }
         indexer.setDocsFromParser(docsFromParse);
-        indexer.indexChunk(documentsFilePW);
+        indexer.indexChunk(documentsFilePW,entitiesFilePW);
 
         docsBuffer.clear();
         docsBuffer=new ArrayList<String[]>();

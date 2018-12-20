@@ -12,20 +12,18 @@ public class Indexer {
     private HashMap<String,DicEntry> dictionary;
     private HashMap<String,StringBuilder> cities;
     private HashSet<String> languages ;
+    private HashSet<String> entities;
 
     private String postingDirPath;
     private String finalPostingFilePath;
 
     public static int totalDocsNum;
-    public static int totalUniqueTerms;
-    public static int capitalCitiesNum;
-    public static int notCapitalCitiesNum;
-    public static int allCitiesNum;
-    public static int numberTerms;
-    public static int countriesNum;
-    public static String mostTimeCitiesDocID;
-    public static String mostTimeCitiesDocIDCityAndPositions;
-    public static int mostTimeCitiesDocIDVal;
+    public int totalUniqueTerms;
+    public int capitalCitiesNum;
+    public int notCapitalCitiesNum;
+    public int allCitiesNum;
+    public int numberTerms;
+    public int countriesNum;
 
 
     private int chunksCounter;
@@ -38,6 +36,7 @@ public class Indexer {
         this.docsFromParser = new HashSet<>();
         this.dictionary = new HashMap<>();
         this.languages = new HashSet<>();
+        this.entities = new HashSet<>();
         this.chunksCounter = 0;
     }
     public void delete() {
@@ -56,7 +55,7 @@ public class Indexer {
     }
 
     /* index the chunk - the main function of the class */
-    public void indexChunk(PrintWriter documentsFilePW) throws FileNotFoundException {
+    public void indexChunk(PrintWriter documentsFilePW,PrintWriter entitiesFilePW) throws FileNotFoundException {
         //open documentsFilePW
 
         //create curr doc's terms
@@ -91,14 +90,9 @@ public class Indexer {
                 if (isTitle) sb.append(",T");
                 // DocID:TF,T;DocID:TF,T;DocID:TF,T...
             }
-            if (d.getNumOfCityLocations() > mostTimeCitiesDocIDVal){
-                mostTimeCitiesDocID = d.getDocID();
-                mostTimeCitiesDocIDVal = d.getNumOfCityLocations();
-                mostTimeCitiesDocIDCityAndPositions = d.getCityOfOrigin()+ " and positions: " + d.getPositions();
-            }
-            //if (d.getDocID().equals("FBIS3-3366")) d.printTermAndCount();
             updateCityDic(d);
             updateDocFile(d, documentsFilePW);
+            updateEntitiesFile(d,entitiesFilePW);
             updateLanguages(d.getLanguage());
 
             d.docTermsAndCount.clear();
@@ -191,6 +185,23 @@ public class Indexer {
     }
     private void updateLanguages(String language){
         languages.add(language);
+    }
+    private void updateEntitiesFile(Document d,PrintWriter entitiesFilePW){
+        StringBuilder sb = new StringBuilder();
+        sb.append(d.getDocID());sb.append("#");
+        sb.append(d.getDocLength());sb.append("#");
+
+        int counter = 1;
+        ArrayList<String> docEntities = d.getEntities;
+        for (String entity : docEntities){
+            if(!entities.contains(entity)) continue;
+            if (counter <= 5){
+                sb.append(entity);sb.append(",");
+                counter++;
+            }
+        }
+        sb.deleteCharAt(sb.length());
+        entitiesFilePW.println(sb.toString());
     }
     private void createTempPostingFile(TreeMap<String, StringBuilder> currChunkTerms) throws FileNotFoundException {
         //create a temp-posting-text-file from all the docs in current chunk
@@ -352,6 +363,9 @@ public class Indexer {
         }
 
         for(String term : termsSet) {
+            //update entities
+            if(term.charAt(0)>='A' && term.charAt(0) <= 'Z')
+                entities.add(term);
             totalUniqueTerms++;
             DicEntry de = dictionary.get(term);
             StringBuilder sb = new StringBuilder();
@@ -361,31 +375,6 @@ public class Indexer {
             sb.append(de.idf); sb.append(",");
             sb.append(de.postingLine);
             // term#sumTf,df,idf,postingLine
-            pw.println(sb.toString());
-        }
-
-        pw.flush();
-        pw.close();
-
-    }
-    public void createDictionaryForReport() throws FileNotFoundException {
-        SortedSet<String> termsSet = new TreeSet<>(dictionary.keySet());
-        String dicFilePath = postingDirPath +"\\" + "dictionaryForReport" + ".txt";
-        File dictionaryFile = new File(dicFilePath);
-        if (dictionaryFile .exists()) dictionaryFile .delete();
-
-        PrintWriter pw = new PrintWriter(new FileOutputStream(dictionaryFile ,true));
-        if (pw==null){
-            System.out.println("Posting folder not found!! - Cannot create dictionary");
-            return;
-        }
-
-        for(String term : termsSet) {
-            DicEntry de = dictionary.get(term);
-            StringBuilder sb = new StringBuilder();
-            sb.append(term); sb.append(":");
-            sb.append(de.sumTF);
-            // term:sumTf
             pw.println(sb.toString());
         }
 
@@ -456,28 +445,6 @@ public class Indexer {
             if (term.matches("-?\\d+(\\.\\d+)?")) numberTerms++;
         }
     }
-
-
-
-
-    /* print data */
-    public static void printData(){
-        System.out.println("Total documents number: "+totalDocsNum);
-        System.out.println("Total unique terms number: "+totalUniqueTerms);
-
-        System.out.println("Num of all Cities: "+allCitiesNum);
-        System.out.println("Num of capital Cities: "+capitalCitiesNum+ ", Num of not capital Cities: "+notCapitalCitiesNum);
-        if (allCitiesNum == capitalCitiesNum + notCapitalCitiesNum) System.out.println("it's OK :)");
-        else System.out.println("it's not OK :( ");
-
-        System.out.println("Num of number-terms: " + numberTerms);
-        System.out.println("Num of cities: " + countriesNum);
-        System.out.println("Most show city docID: " + mostTimeCitiesDocID + "the city is: " +mostTimeCitiesDocIDCityAndPositions  + "the number of shows is: " +mostTimeCitiesDocIDVal );
-
-    }
-
-
-
 
     public String showDictionary() throws IOException {
         /*
