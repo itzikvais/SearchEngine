@@ -17,13 +17,15 @@ public class ReadFile {
     private String corpusPath;
     private String postingDirPath;
     private ArrayList<String[]> docsBuffer=new ArrayList<String[]>(  ); // buffer for one chunk of docs
+    private int totalDocs=0;
+    private int totalTerms=0;
     private Indexer indexer;
     private int chunknum=0;
     private PrintWriter documentsFilePW;
 
     public ReadFile(String path, String postingsPath) {
         this.swPath=path;
-        this.corpusPath = path+"/corpusTest";
+        this.corpusPath = path+"/miniCourpus";
         this.postingDirPath = postingsPath;
     }
     public void setCorpusPath(String f){
@@ -129,6 +131,10 @@ public class ReadFile {
         chunknum++;
         parser.setDocsBuffer(docsBuffer);
         HashSet<Document> docsFromParse =  parser.parse();
+        totalDocs+=docsFromParse.size();
+        for (Document d:docsFromParse) {
+            totalTerms+=d.getDocLength();
+        }
         indexer.setDocsFromParser(docsFromParse);
         indexer.indexChunk(documentsFilePW);
 
