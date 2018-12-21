@@ -94,6 +94,12 @@ public class Parse {
                     Term Nterm = new Term( lowTerm, t.isTitle );
                     if (doc.docTermsAndCount.containsKey( Nterm )) {
                         int val = doc.docTermsAndCount.get( Nterm ) + doc.docTermsAndCount.get( t );
+                        for(Term lt:doc.docTermsAndCount.keySet()){
+                            if(lt.equals( Nterm )){
+                                Nterm.isTitle=Nterm.isTitle||lt.isTitle;
+                                break;
+                            }
+                        }
                         docTerms.put( Nterm, val );
                     }
                     else {
@@ -380,7 +386,7 @@ public class Parse {
     private void addStopwords(String path) {
 
         try {
-            BufferedReader br = new BufferedReader( new FileReader( path+"\\stop_words.txt" ) );
+            BufferedReader br = new BufferedReader( new FileReader( path+"/stop_words" ) );
             String st;
             while ((st = br.readLine()) != null){
                 stopWords.add( st );
