@@ -88,10 +88,10 @@ public class Indexer {
                 }
                 if (sb.length() != 0) sb.append(";");
                 sb.append(d.getDocID());
+                if (isTitle) sb.append("*");
                 sb.append(":");
                 sb.append(count);
-                if (isTitle) sb.append(",T");
-                // DocID:TF,T;DocID:TF,T;DocID:TF,T...
+                // DocID*:TF;DocID:TF;DocID*:TF...
             }
             updateCityDic(d);
             updateDocFile(d, documentsFilePW);
@@ -196,7 +196,10 @@ public class Indexer {
 
         ArrayList<String> docEntities = d.getEntities();
         for (String entity : docEntities){
-            sb.append(entity);sb.append(",");
+            sb.append(entity);
+            sb.append("@");
+            sb.append(d.docTermsAndCount.get(new Term(entity,false)));
+            sb.append(",");
         }
         sb.deleteCharAt(sb.length()-1);
         entitiesFilePW.println(sb.toString());
@@ -485,7 +488,7 @@ public class Indexer {
                 String[] entities = splited[2].split(",");
                 int counter = 0;
                 for (int i = 0; i < entities.length && counter <5 ; i++) {
-                    if (this.entities.contains(entities[i])){
+                    if (this.entities.contains(entities[i].split("@")[0])){
                         sb.append(entities[i]);
                         sb.append(",");
                         counter++;
