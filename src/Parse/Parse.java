@@ -380,7 +380,7 @@ public class Parse {
     private void addStopwords(String path) {
 
         try {
-            BufferedReader br = new BufferedReader( new FileReader( path+"/stop_words" ) );
+            BufferedReader br = new BufferedReader( new FileReader( path+"\\stop_words.txt" ) );
             String st;
             while ((st = br.readLine()) != null){
                 stopWords.add( st );
@@ -432,9 +432,9 @@ public class Parse {
                 term=newTerm.substring( 0,newTerm.length()-1 );
             }
             */
-                stem.add( term.toCharArray(), term.length() );
-                stem.stem();
-                term = stem.toString();
+            stem.add( term.toCharArray(), term.length() );
+            stem.stem();
+            term = stem.toString();
 
         }
         if(term!=null&&term.length()>0) {

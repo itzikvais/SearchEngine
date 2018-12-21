@@ -53,6 +53,9 @@ public class Indexer {
     public void setDocsFromParser(HashSet<Document> docsFromParser) {
         this.docsFromParser = docsFromParser;
     }
+    public String getPostingDirPath() {
+        return postingDirPath;
+    }
 
     /* index the chunk - the main function of the class */
     public void indexChunk(PrintWriter documentsFilePW,PrintWriter entitiesFilePW) throws FileNotFoundException {
@@ -191,17 +194,13 @@ public class Indexer {
         sb.append(d.getDocID());sb.append("#");
         sb.append(d.getDocLength());sb.append("#");
 
-        int counter = 1;
         ArrayList<String> docEntities = d.getEntities();
         for (String entity : docEntities){
-            if(!entities.contains(entity)) continue;
-            if (counter <= 5){
-                sb.append(entity);sb.append(",");
-                counter++;
-            }
+            sb.append(entity);sb.append(",");
         }
-        sb.deleteCharAt(sb.length());
+        sb.deleteCharAt(sb.length()-1);
         entitiesFilePW.println(sb.toString());
+        //docID#DocLength#entity,entity,entity,entity,entity...
     }
     private void createTempPostingFile(TreeMap<String, StringBuilder> currChunkTerms) throws FileNotFoundException {
         //create a temp-posting-text-file from all the docs in current chunk
@@ -405,6 +404,10 @@ public class Indexer {
         }
     }
 
+    /* cities functions */
+    public HashSet<String> getCities(){
+        return (HashSet<String>) cities.keySet();
+    }
     public void createCityFile() throws FileNotFoundException {
         File CityFile = new File(postingDirPath +"\\" + "cityFile" + ".txt");
         if (CityFile.exists()) CityFile.delete();
@@ -445,6 +448,62 @@ public class Indexer {
             if (term.matches("-?\\d+(\\.\\d+)?")) numberTerms++;
         }
     }
+
+    /* entities functions */
+    public void createFinalEntitiesFile(PrintWriter entitiesPW){
+        //close and create reader buffer
+        entitiesPW.flush();
+        entitiesPW.close();
+        BufferedReader br = null;
+        try {
+            br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(postingDirPath + "\\" + "entitiesFile" + ".txt"))));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        //create entities final file
+        PrintWriter finalEntitiesFilePW = null;
+        File finalEntitiesFile = new File(postingDirPath + "\\" + "finalEntitiesFile" + ".txt");
+        if (finalEntitiesFile.exists()) finalEntitiesFile.delete();
+        try {
+            finalEntitiesFilePW = new PrintWriter(new FileOutputStream(finalEntitiesFile, true));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        if (finalEntitiesFilePW  == null) {
+            System.out.println("Posting folder not found!! - Cannot create entitiesFile");
+        }
+
+        //write to the file
+        String line;
+        try {
+            while (br != null && (line = br.readLine()) != null) {
+                StringBuilder sb = new StringBuilder();
+                String[] splited = line.split("#");
+                sb.append(splited[0]);sb.append("#");
+                sb.append(splited[1]);sb.append("#");
+                String[] entities = splited[2].split(",");
+                int counter = 0;
+                for (int i = 0; i < entities.length && counter <5 ; i++) {
+                    if (this.entities.contains(entities[i])){
+                        sb.append(entities[i]);
+                        sb.append(",");
+                        counter++;
+                    }
+                }
+                sb.deleteCharAt(sb.length()-1);
+                finalEntitiesFilePW.println(sb.toString());
+            }
+            finalEntitiesFilePW.flush();
+            finalEntitiesFilePW.close();
+            br.close();
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+
 
     public String showDictionary() throws IOException {
         /*

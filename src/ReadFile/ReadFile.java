@@ -18,13 +18,12 @@ public class ReadFile {
     private ArrayList<String[]> docsBuffer=new ArrayList<String[]>(  ); // buffer for one chunk of docs
     private Indexer indexer;
     private int chunknum=0;
-    private int totalTerms = 0;
     private PrintWriter documentsFilePW;
     private PrintWriter entitiesFilePW;
 
     public ReadFile(String path, String postingsPath) {
         this.swPath=path;
-        this.corpusPath = path+"/corpusTest";
+        this.corpusPath = path+"\\miniCorpus";
         this.postingDirPath = postingsPath;
     }
     public void setCorpusPath(String f){
@@ -35,23 +34,27 @@ public class ReadFile {
     }
 
     public HashSet<String> start(boolean toStem) throws IOException {
-        indexer.totalUniqueTerms=0;
-        indexer.totalDocsNum=0;
         if (toStem){
             indexer = new Indexer(postingDirPath+ "\\" + "withStemming");
             File stemDir = new File(postingDirPath+ "\\" + "withStemming" );
-            if(!stemDir.exists())
+            if(!stemDir.exists()) {
                 stemDir.mkdir();
+            }
         }
         else {
             indexer = new Indexer(postingDirPath + "\\" + "withoutStemming");
             File stemDir = new File(postingDirPath+ "\\" + "withoutStemming" );
-            if(!stemDir.exists())
+            if(!stemDir.exists()) {
                 stemDir.mkdir();
+            }
         }
+        indexer.totalUniqueTerms=0;
+        indexer.totalDocsNum=0;
+
         //create document posting file
         File documentsFile = new File(postingDirPath + "\\" + "documentsFile" + ".txt");
         if (documentsFile.exists()) documentsFile.delete();
+
         try {
             documentsFilePW = new PrintWriter(new FileOutputStream(documentsFile, true));
         } catch (FileNotFoundException e) {
@@ -61,16 +64,18 @@ public class ReadFile {
             System.out.println("Posting folder not found!! - Cannot create DocsPostingFile");
             return null;
         }
-        //create entities file
-        File entitiesFile = new File(postingDirPath + "\\" + "entitiesFile" + ".txt");
-        if (entitiesFile.exists()) documentsFile.delete();
+
+        //create entities posting file
+        File entitiesFile = new File(indexer.getPostingDirPath() + "\\" + "entitiesFile.txt");
+        if (entitiesFile.exists()) entitiesFile.delete();
+
         try {
             entitiesFilePW = new PrintWriter(new FileOutputStream(entitiesFile, true));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
         if (entitiesFilePW == null) {
-            System.out.println("Posting folder not found!! - Cannot create entitiesFile");
+            System.out.println("Posting folder not found!! - Cannot create entitiesFilePW");
             return null;
         }
 
@@ -125,24 +130,22 @@ public class ReadFile {
         try {
             indexer.createDictionary();
             indexer.createCityFile();
-            indexer.howManyNumbersTerms();
-            //printData();
+            indexer.createFinalEntitiesFile(entitiesFilePW);
+//            indexer.howManyNumbersTerms();
+//            printData();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
 
         return indexer.getLanguages();
     }
-    private void prosesChunk(PrintWriter documentsFilePW,PrintWriter entitiesFilePW, boolean toStem) throws FileNotFoundException {
+    private void prosesChunk(PrintWriter documentsFilePW, PrintWriter entitiesFilePW, boolean toStem) throws FileNotFoundException {
         Parse parser=new Parse( swPath,toStem );
         if (docsBuffer.isEmpty()) return;
         System.out.println("check" + chunknum);
         chunknum++;
         parser.setDocsBuffer(docsBuffer);
         HashSet<Document> docsFromParse =  parser.parse();
-        for (Document d : docsFromParse){
-            totalTerms+=d.getDocLength();
-        }
         indexer.setDocsFromParser(docsFromParse);
         indexer.indexChunk(documentsFilePW,entitiesFilePW);
 
