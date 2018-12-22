@@ -1,5 +1,6 @@
 package ReadFile;
 
+import ExternalClasses.DocForSearcher;
 import ExternalClasses.Document;
 import Indexer.Indexer;
 import Parse.Parse;
@@ -20,6 +21,7 @@ public class ReadFile {
     private int chunknum=0;
     private PrintWriter documentsFilePW;
     private PrintWriter entitiesFilePW;
+    private int totalTerms;
 
     public ReadFile(String path, String postingsPath) {
         this.swPath=path;
@@ -136,9 +138,33 @@ public class ReadFile {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-
+        writeDataForRanker();
         return indexer.getLanguages();
     }
+    private void writeDataForRanker() {
+        //create dataForRanker file
+        File dataForRanker = new File(System.getProperty("user.dir")+"\\dataForRanker");
+        if (dataForRanker.exists()) dataForRanker.delete();
+
+        PrintWriter dataForRankerPW = null;
+        try {
+            dataForRankerPW = new PrintWriter(new FileOutputStream(dataForRanker, true));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        if (dataForRankerPW == null) {
+            System.out.println("Posting folder not found!! - Cannot create dataForRankerPW");
+        }
+
+        //fill with data
+        dataForRankerPW.println(indexer.totalDocsNum);
+        dataForRankerPW.println(totalTerms/indexer.totalDocsNum);
+
+        dataForRankerPW.flush();
+        dataForRankerPW.close();
+
+    }
+
     private void prosesChunk(PrintWriter documentsFilePW, PrintWriter entitiesFilePW, boolean toStem) throws FileNotFoundException {
         Parse parser=new Parse( swPath,toStem );
         if (docsBuffer.isEmpty()) return;
@@ -146,6 +172,9 @@ public class ReadFile {
         chunknum++;
         parser.setDocsBuffer(docsBuffer);
         HashSet<Document> docsFromParse =  parser.parse();
+        for (Document d : docsFromParse){
+            totalTerms += d.getDocLength();
+        }
         indexer.setDocsFromParser(docsFromParse);
         indexer.indexChunk(documentsFilePW,entitiesFilePW);
 
@@ -210,8 +239,7 @@ public class ReadFile {
         }
     }
     public static void main(String[] args) {
-
-//        rf.reset();
+        System.out.println(System.getProperty("user.dir"));
     }
 
     public String showDictionary() throws IOException {

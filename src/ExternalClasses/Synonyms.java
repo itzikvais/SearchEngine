@@ -26,7 +26,7 @@ public class Synonyms {
 
 
 
-    private String[] searchSynonym(String wordToSearch) throws Exception {
+    public String[] searchSynonym(String wordToSearch) throws Exception {
         String synWords="";
         String url = "https://api.datamuse.com/words?rel_syn=" + wordToSearch;
 
