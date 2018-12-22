@@ -4,25 +4,22 @@ import ExternalClasses.DocForSearcher;
 import ExternalClasses.Synonyms;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 
 import static java.lang.Integer.parseInt;
 import static org.apache.http.util.CharsetUtils.get;
 
 
 public class Ranker {
-    ArrayList<String> queryTerms;
-    Synonyms synonyms;
-    HashMap<String,DocForSearcher> withRank;
-    HashMap<String, Integer> currTermDocAndSynonymsCount;
-    String postingDirPath;
-    boolean toSynonym;
-    HashMap<String,ArrayList<String>> titlesInDocs;
-    int totalDocs;
-    double avgDocLength;
+    private ArrayList<String> queryTerms;
+    private Synonyms synonyms;
+    private HashMap<String,DocForSearcher> withRank;
+    private HashMap<String, Integer> currTermDocAndSynonymsCount;
+    private String postingDirPath;
+    private boolean toSynonym;
+    private HashMap<String,ArrayList<String>> titlesInDocs;
+    private int totalDocs;
+    private double avgDocLength;
 
     public Ranker(ArrayList<String> queryTerms,String postingDirPath) {
         this.queryTerms = queryTerms;
@@ -75,7 +72,6 @@ public class Ranker {
 
 
     }
-
     private String adaptToDic(String sym, boolean toStem) {
         try {
             String dictionaryFullPath;
@@ -114,7 +110,6 @@ public class Ranker {
         System.out.println("somthing wrong with finding synonyms as they show in Dictionary");
         return null;
     }
-
     private void bm25Update(ArrayList<String> finalqueryTerms) {
         //refresh for next qi
         currTermDocAndSynonymsCount.clear();
@@ -244,9 +239,22 @@ public class Ranker {
         }
             titlesInDocs.get(currDocID).add(qi);
     }
+    public ArrayList<DocForSearcher> getDocsWithRank(){
+        ArrayList<DocForSearcher> docs = new ArrayList<>(withRank.values());
+        docs.sort(new Comparator<DocForSearcher>() {
+            @Override
+            public int compare(DocForSearcher o1, DocForSearcher o2) {
+                return Double.compare(o2.rank,o1.rank);
+            }
+        });
+        if (docs.size() > 50){
+            docs = (ArrayList<DocForSearcher>) docs.subList(0,49);
+        }
+        return docs;
+    }
 
     public static void main(String[] args) {
-        String postingDirPath = "C:\\Users\\tsizer\\Documents\\לימודים\\שנה ג\\סמסטר א\\אחזור מידע\\מנוע\\postingFileCheck";
+        String postingDirPath = "C:\\Users\\tsizer\\Documents\\לימודים\\שנה ג\\סמסטר א\\אחזור מידע\\מנוע\\postingFileCheck\\withoutStemming";
         ArrayList<String> arrayList = new ArrayList<>();
         arrayList.add("exchange");
         arrayList.add("export");
@@ -257,6 +265,12 @@ public class Ranker {
         for (String docID : r.withRank.keySet()) {
             double rank = r.withRank.get(docID).rank;
             System.out.println("DocId: "+docID+" rank: " + rank);
+        }
+
+        System.out.println("*************************");
+        ArrayList<DocForSearcher> sorted = r.getDocsWithRank();
+        for (DocForSearcher d : sorted){
+            System.out.println("DocId: "+d.getDocID()+" rank: " + d.rank);
         }
     }
 }
