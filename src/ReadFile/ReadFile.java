@@ -143,7 +143,7 @@ public class ReadFile {
     }
     private void writeDataForRanker() {
         //create dataForRanker file
-        File dataForRanker = new File(System.getProperty("user.dir")+"\\dataForRanker");
+        File dataForRanker = new File(System.getProperty("user.dir")+"\\dataForRanker"+".txt");
         if (dataForRanker.exists()) dataForRanker.delete();
 
         PrintWriter dataForRankerPW = null;
@@ -158,7 +158,7 @@ public class ReadFile {
 
         //fill with data
         dataForRankerPW.println(indexer.totalDocsNum);
-        dataForRankerPW.println(totalTerms/indexer.totalDocsNum);
+        dataForRankerPW.println((double)totalTerms/(double)indexer.totalDocsNum);
 
         dataForRankerPW.flush();
         dataForRankerPW.close();

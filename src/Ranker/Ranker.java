@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import static java.lang.Integer.parseInt;
+import static org.apache.http.util.CharsetUtils.get;
 
 
 public class Ranker {
@@ -32,7 +33,7 @@ public class Ranker {
         this.currTermDocAndSynonymsCount = new HashMap<>();
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(System.getProperty("user.dir")+"\\dataForRanker"))));
+            br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(System.getProperty("user.dir")+"\\dataForRanker.txt"))));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -48,11 +49,8 @@ public class Ranker {
         }
     }
 
-    public void rank(){
+    public void rank(boolean toStem){
         if(queryTerms == null || queryTerms.size()==0) return;
-        for (String qi : queryTerms) {
-
-        }
         ArrayList<String> finalqueryTerms = null;
 
         //initial
@@ -60,6 +58,9 @@ public class Ranker {
             if(toSynonym) {
                 try {
                     finalqueryTerms = new ArrayList<String>(Arrays.asList(synonyms.searchSynonym(qi)));
+                    for(String sym : finalqueryTerms){
+                        sym = adaptToDic(sym,toStem);
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -68,11 +69,50 @@ public class Ranker {
                 finalqueryTerms = new ArrayList<>();
             }
             finalqueryTerms.add(qi);
+            bm25Update(finalqueryTerms);
         }
 
-        bm25Update(finalqueryTerms);
 
 
+    }
+
+    private String adaptToDic(String sym, boolean toStem) {
+        try {
+            String dictionaryFullPath;
+            if (toStem) {
+                dictionaryFullPath = postingDirPath + "\\" + "withStemming" + "\\" + "dictionary" + ".txt";
+            } else {
+                dictionaryFullPath = postingDirPath + "\\" + "withoutStemming" + "\\" + "dictionary" + ".txt";
+            }
+            BufferedReader br = new BufferedReader(new FileReader(dictionaryFullPath));
+
+            String line = null;
+            String[] splited;
+            if (br != null) {
+                //search the line
+                line = br.readLine();
+                String term = null;
+                while (line != null) {
+                    term = line.split("#")[0];
+                    if (sym.equals(term.toUpperCase())){
+                        return term.toUpperCase();
+                    }
+                    if (sym.equals(term.toLowerCase())){
+                        return term.toLowerCase();
+                    }
+                }
+                if (line == null){
+                    System.out.println("No such Term (sym) in Dic");
+                    return null;
+                }
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println("somthing wrong with finding synonyms as they show in Dictionary");
+        return null;
     }
 
     private void bm25Update(ArrayList<String> finalqueryTerms) {
@@ -96,10 +136,18 @@ public class Ranker {
             int freqTermInDoc = currTermDocAndSynonymsCount.get(docId);
             double rank = (freqTermInDoc*(2+1))/(freqTermInDoc+2*((1-0.75)+0.75*(docLength/avgDocLength)));
             rank *= idf;
+            if(titlesInDocs.containsKey(docId)){
+                ArrayList<String> titlesTerms = titlesInDocs.get(docId);
+                for( String sym : queryTerms){
+                    if( titlesTerms.contains(sym)){
+                        rank += idf;
+                        break;
+                    }
+                }
+            }
             withRank.get(docId).rank += rank;
         }
     }
-
     private int getDocsNum(String qi){
         int docNum = 0;
         //create buffer reader
@@ -117,11 +165,14 @@ public class Ranker {
                 //search the line
                 line = br.readLine();
                 while (line != null) {
-                    String term = line.split("#")[0];
+                    String term = line.split("#")[0].trim();
                     if (term.equals(qi)) break;
                     line = br.readLine();
                 }
-                if (line == null) System.out.println("No such Term in posting file");
+                if (line == null){
+                    System.out.println("No such Term in posting file");
+                    return 0;
+                }
 
                 //use the line
                 String[] splited = line.split("#");
@@ -134,10 +185,11 @@ public class Ranker {
                     String currDocID = docsString[i].split(":")[0];
                     int count = Integer.parseInt(docsString[i].split(":")[1]);
                     if (currDocID.contains("*")) {
-                        currDocID.replace("*", "");
+                        currDocID=currDocID.replace("*", "");
                         addTitleDoc(qi, currDocID);
                     }
-                    withRank.put(currDocID,new DocForSearcher(currDocID, 0, null));
+                    if(!withRank.containsKey(currDocID))
+                        withRank.put(currDocID,new DocForSearcher(currDocID, 0, null));
                     if (!currTermDocAndSynonymsCount.containsKey(currDocID)) {
                         currTermDocAndSynonymsCount.put(currDocID, count);
                     } else {
@@ -165,7 +217,6 @@ public class Ranker {
         String line = null;
         try {
             if (br != null) {
-
                 //search the line
                 line = br.readLine();
                 while (line != null) {
@@ -174,6 +225,8 @@ public class Ranker {
                     line = br.readLine();
                 }
                 //use the line
+                if(line==null)
+                    System.out.println(docID);
                 String[] splited = line.split("#");
                 doc.docLength = parseInt(splited[1]);
                 String docEntities = splited[2];
@@ -190,5 +243,20 @@ public class Ranker {
             titlesInDocs.put(currDocID,new ArrayList<>());
         }
             titlesInDocs.get(currDocID).add(qi);
+    }
+
+    public static void main(String[] args) {
+        String postingDirPath = "C:\\Users\\tsizer\\Documents\\לימודים\\שנה ג\\סמסטר א\\אחזור מידע\\מנוע\\postingFileCheck";
+        ArrayList<String> arrayList = new ArrayList<>();
+        arrayList.add("exchange");
+        arrayList.add("export");
+
+        Ranker r = new Ranker(arrayList, postingDirPath);
+        r.rank(false);
+
+        for (String docID : r.withRank.keySet()) {
+            double rank = r.withRank.get(docID).rank;
+            System.out.println("DocId: "+docID+" rank: " + rank);
+        }
     }
 }
