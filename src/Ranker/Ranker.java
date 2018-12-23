@@ -7,7 +7,6 @@ import java.io.*;
 import java.util.*;
 
 import static java.lang.Integer.parseInt;
-import static org.apache.http.util.CharsetUtils.get;
 
 
 public class Ranker {
@@ -15,19 +14,24 @@ public class Ranker {
     private Synonyms synonyms;
     private HashMap<String,DocForSearcher> withRank;
     private HashMap<String, Integer> currTermDocAndSynonymsCount;
+    private ArrayList<String> cities;
     private String postingDirPath;
     private boolean toSynonym;
+    private boolean toStem;
     private HashMap<String,ArrayList<String>> titlesInDocs;
     private int totalDocs;
     private double avgDocLength;
 
-    public Ranker(ArrayList<String> queryTerms,String postingDirPath) {
+    public Ranker(ArrayList<String> queryTerms,String postingDirPath,ArrayList<String> cities,boolean toSynonym,boolean toStem) {
         this.queryTerms = queryTerms;
         this.synonyms = new Synonyms();
         this.withRank= new HashMap<>();
         this.postingDirPath = postingDirPath;
         this.titlesInDocs = new HashMap<>();
         this.currTermDocAndSynonymsCount = new HashMap<>();
+        this.toSynonym = toSynonym;
+        this.toStem = toStem;
+        this.cities = cities;
         BufferedReader br = null;
         try {
             br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(System.getProperty("user.dir")+"\\dataForRanker.txt"))));
@@ -46,7 +50,7 @@ public class Ranker {
         }
     }
 
-    public void rank(boolean toStem){
+    public void rank(){
         if(queryTerms == null || queryTerms.size()==0) return;
         ArrayList<String> finalqueryTerms = null;
 
@@ -68,9 +72,6 @@ public class Ranker {
             finalqueryTerms.add(qi);
             bm25Update(finalqueryTerms);
         }
-
-
-
     }
     private String adaptToDic(String sym, boolean toStem) {
         try {
@@ -110,18 +111,18 @@ public class Ranker {
         System.out.println("somthing wrong with finding synonyms as they show in Dictionary");
         return null;
     }
-    private void bm25Update(ArrayList<String> finalqueryTerms) {
+    private void bm25Update(ArrayList<String> finalQueryTerms) {
         //refresh for next qi
         currTermDocAndSynonymsCount.clear();
         currTermDocAndSynonymsCount = new HashMap<>();
         int docNum = 0;
-        for (String qi :finalqueryTerms){
+        for (String qi :finalQueryTerms){
             docNum += getDocsNum(qi);
         }
 
         //foreach doc update doc length and entities
         for(DocForSearcher doc : withRank.values()){
-            updateDocLengthAndEntities(doc);
+            updateDocLengthEntitiesAndCities(doc);
         }
         //calculate idf for qwery term
         double idf = Math.log10((totalDocs - docNum + 0.5)/(docNum +0.5));
@@ -184,7 +185,7 @@ public class Ranker {
                         addTitleDoc(qi, currDocID);
                     }
                     if(!withRank.containsKey(currDocID))
-                        withRank.put(currDocID,new DocForSearcher(currDocID, 0, null));
+                        withRank.put(currDocID,new DocForSearcher(currDocID,"", 0, null));
                     if (!currTermDocAndSynonymsCount.containsKey(currDocID)) {
                         currTermDocAndSynonymsCount.put(currDocID, count);
                     } else {
@@ -199,33 +200,52 @@ public class Ranker {
         }
         return docNum;
     }
-    private void updateDocLengthAndEntities(DocForSearcher doc) {
+    private void updateDocLengthEntitiesAndCities(DocForSearcher doc) {
         String docID = doc.getDocID();
         //find entities
         //create buffer reader
-        BufferedReader br = null;
+        BufferedReader postingFileBR = null;
+        BufferedReader documentsFileBR = null;
         try {
-            br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(postingDirPath + "\\" + "finalEntitiesFile" + ".txt"))));
+            String path;
+            if(toStem)
+                path = postingDirPath + "\\withStemming";
+            else path = postingDirPath + "\\withoutStemming";
+            postingFileBR = new BufferedReader(new InputStreamReader(new FileInputStream(new File(path + "\\" + "finalEntitiesFile" + ".txt"))));
+            documentsFileBR = new BufferedReader(new InputStreamReader(new FileInputStream(new File(postingDirPath + "\\" + "documentsFile.txt"))));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
         String line = null;
         try {
-            if (br != null) {
+            if (postingFileBR != null) {
                 //search the line
-                line = br.readLine();
+                line = postingFileBR.readLine();
                 while (line != null) {
                     String currDocID = line.split("#")[0];
                     if (currDocID.equals(docID)) break;
-                    line = br.readLine();
+                    line = postingFileBR.readLine();
                 }
                 //use the line
                 if(line==null)
-                    System.out.println(docID);
+                    System.out.println(docID+" postingFile");
                 String[] splited = line.split("#");
                 doc.docLength = parseInt(splited[1]);
                 String docEntities = splited[2];
                 doc.entities = new ArrayList<>(Arrays.asList(docEntities));
+
+                line = documentsFileBR.readLine();
+                while (line != null) {
+                    String currDocID = line.split("#")[0];
+                    if (currDocID.equals(docID)) break;
+                    line = documentsFileBR.readLine();
+                }
+                if(line==null)
+                    System.out.println(docID+" documentFile");
+                splited = line.split("#");
+                String[] data = splited[1].split(",");
+                String city = data[3].split(":")[0].trim();
+                doc.cityOfOrigin=city;
 
             }
         }
@@ -239,8 +259,18 @@ public class Ranker {
         }
             titlesInDocs.get(currDocID).add(qi);
     }
+
     public ArrayList<DocForSearcher> getDocsWithRank(){
         ArrayList<DocForSearcher> docs = new ArrayList<>(withRank.values());
+        ArrayList<DocForSearcher> docsByCity = new ArrayList<>();
+
+        if (cities != null){
+            for(DocForSearcher doc : docs){
+                if(cities.contains(doc.cityOfOrigin))
+                    docsByCity.add(doc);
+            }
+            docs = docsByCity;
+        }
         docs.sort(new Comparator<DocForSearcher>() {
             @Override
             public int compare(DocForSearcher o1, DocForSearcher o2) {
@@ -254,13 +284,17 @@ public class Ranker {
     }
 
     public static void main(String[] args) {
-        String postingDirPath = "C:\\Users\\tsizer\\Documents\\לימודים\\שנה ג\\סמסטר א\\אחזור מידע\\מנוע\\postingFileCheck\\withoutStemming";
-        ArrayList<String> arrayList = new ArrayList<>();
-        arrayList.add("exchange");
-        arrayList.add("export");
+        String postingDirPath = "C:\\Users\\tsizer\\Documents\\לימודים\\שנה ג\\סמסטר א\\אחזור מידע\\מנוע\\postingFileCheck";
+        ArrayList<String> entitiesArrayList = new ArrayList<>();
+        entitiesArrayList.add("exchange");
+        entitiesArrayList.add("export");
 
-        Ranker r = new Ranker(arrayList, postingDirPath);
-        r.rank(false);
+        ArrayList<String> citiesArrayList = new ArrayList<>();
+        citiesArrayList.add("HONG");
+        citiesArrayList.add("PARIS");
+
+        Ranker r = new Ranker(entitiesArrayList, postingDirPath,citiesArrayList,true,false);
+        r.rank();
 
         for (String docID : r.withRank.keySet()) {
             double rank = r.withRank.get(docID).rank;
