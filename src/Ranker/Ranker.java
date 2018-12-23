@@ -46,8 +46,8 @@ public class Ranker {
         }
     }
 
-    public void rank(boolean toStem){
-        if(queryTerms == null || queryTerms.size()==0) return;
+    public HashMap<String,DocForSearcher> rank(boolean toStem){
+        if(queryTerms == null || queryTerms.size()==0) return null;
         ArrayList<String> finalqueryTerms = null;
 
         //initial
@@ -68,9 +68,7 @@ public class Ranker {
             finalqueryTerms.add(qi);
             bm25Update(finalqueryTerms);
         }
-
-
-
+        return withRank;
     }
     private String adaptToDic(String sym, boolean toStem) {
         try {
@@ -148,6 +146,7 @@ public class Ranker {
         //create buffer reader
         BufferedReader br = null;
         try {
+            System.out.println(postingDirPath + "\\" + "PostingFile" + ".txt");
             br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(postingDirPath + "\\" + "PostingFile" + ".txt"))));
         } catch (FileNotFoundException e) {
             e.printStackTrace();

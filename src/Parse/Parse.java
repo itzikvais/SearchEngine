@@ -24,7 +24,18 @@ public class Parse {
     private static final Pattern UNWANTED_SYMBOLS = Pattern.compile("(?:|[\\[\\]{}()+/\\\\])");
     private boolean toStem;
     private int termPlace;
-
+    private boolean isSearcher=false;
+    private ArrayList<String> termsForSearcher;
+    /**
+     * a constructor for a sercher
+     */
+    public Parse(boolean isSearcher,boolean toStem){
+        this.isSearcher=isSearcher;
+        termsForSearcher=new ArrayList<>(  );
+        this.toStem=toStem;
+        doc=new Document( null,null,0,0 );
+        numOfPArse++;
+    }
     /**
      *
      * @param toStem using stem or not
@@ -45,12 +56,17 @@ public class Parse {
     public void setDocsBuffer(ArrayList<String[]> docsBuffer) {
         this.docsBuffer.addAll( docsBuffer );
     }
-
+    public ArrayList<String> parseForSearcher(String query){
+        if(query==null)
+            return null;
+        parseLine( query.split( " " ) );
+        clearParser();
+        return termsForSearcher;
+    }
     /**
      *
      * @return an HashSet of parsed documents
      */
-
     public HashSet<Document> parse(){
         for (int i = 0; i < docsBuffer.size(); i++) {
             String[] docProp=docsBuffer.get(i);
@@ -135,6 +151,8 @@ public class Parse {
     private void parseLine(String[] line) {
         boolean title=false;
         boolean parse=false;
+        if(isSearcher)
+            parse=true;
         for (int i = 0; i <line.length ; i++) {
             if (i+1<line.length&&line[i].equals( "!F@" )&&!line[i+1].equals( "!/T@" )) {
                 line[i+1]=line[i+1].replaceAll( "[\\p{Punct}]+","" );
@@ -386,7 +404,7 @@ public class Parse {
     private void addStopwords(String path) {
 
         try {
-            BufferedReader br = new BufferedReader( new FileReader( path+"\\stop_words.txt" ) );
+            BufferedReader br = new BufferedReader( new FileReader( path+"/stop_words" ) );
             String st;
             while ((st = br.readLine()) != null){
                 stopWords.add( st );
@@ -424,28 +442,22 @@ public class Parse {
             term=term.substring(1);
         if(term==null||term.length()<1)
             return;
-        termPlace++;
-        if(toStem){
-            /*
-            if(term.contains( "-" ) ){
-                String[] terms=term.split( "-" );
-                String newTerm="";
-                for (int i = 0; i <terms.length ; i++) {
-                    stem.add( terms[i].toCharArray(),term.length() );
-                    stem.stem();
-                    newTerm+=stem.toString()+"-";
-                }
-                term=newTerm.substring( 0,newTerm.length()-1 );
-            }
-            */
-            stem.add( term.toCharArray(), term.length() );
-            stem.stem();
-            term = stem.toString();
+        else {
+            termPlace++;
+            if (toStem) {
+                stem.add( term.toCharArray(), term.length() );
+                stem.stem();
+                term = stem.toString();
 
-        }
-        if(term!=null&&term.length()>0) {
-            Term t = new Term( term, title );
-            doc.addTerm( t );
+            }
+            if (term != null && term.length() > 0) {
+                Term t = new Term( term, title );
+                if(isSearcher){
+                    termsForSearcher.add( term );
+                }
+                else
+                    doc.addTerm( t );
+            }
         }
     }
 
