@@ -52,14 +52,14 @@ public class Ranker {
 
     public void rank(){
         if(queryTerms == null || queryTerms.size()==0) return;
-        ArrayList<String> finalqueryTerms = null;
+        ArrayList<String> finalQueryTerms = null;
 
         //initial
         for (String qi : queryTerms) {
             if(toSynonym) {
                 try {
-                    finalqueryTerms = new ArrayList<String>(Arrays.asList(synonyms.searchSynonym(qi)));
-                    for(String sym : finalqueryTerms){
+                    finalQueryTerms = new ArrayList<String>(Arrays.asList(synonyms.searchSynonym(qi)));
+                    for(String sym : finalQueryTerms){
                         sym = adaptToDic(sym,toStem);
                     }
                 } catch (Exception e) {
@@ -67,10 +67,12 @@ public class Ranker {
                 }
             }
             else {
-                finalqueryTerms = new ArrayList<>();
+                finalQueryTerms = new ArrayList<>();
             }
-            finalqueryTerms.add(qi);
-            bm25Update(finalqueryTerms);
+            finalQueryTerms.add(qi);
+            if(!cities.isEmpty())
+                finalQueryTerms.addAll(cities);
+            bm25Update(finalQueryTerms);
         }
     }
     private String adaptToDic(String sym, boolean toStem) {

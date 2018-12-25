@@ -27,7 +27,7 @@ public class Searcher {
         Parse parse=new Parse( true,toStem );
         if(!isFile){
             Ranker ranker=null;
-            ranker=new Ranker( parse.parseForSearcher( queries ),postingPath );
+            ranker=new Ranker(parse.parseForSearcher( queries ),postingPath );
             printDate(ranker.rank( toStem ));
         }
         else{
