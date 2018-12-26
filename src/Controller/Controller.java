@@ -8,19 +8,12 @@ import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Group;
+import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.ComboBox;
 import javafx.scene.Group;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.ButtonType;
-import javafx.stage.DirectoryChooser;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
+import javafx.stage.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,6 +43,7 @@ public class Controller implements Observer {
     public javafx.scene.control.TextField txtfld_corpus;
     public javafx.scene.control.TextField txtfld_path;
     private boolean load;
+    private TextField queryFilePlace;
 
     public Controller( ) {
         myModel=null;
@@ -101,7 +95,7 @@ public class Controller implements Observer {
         form.setLayoutX( 138 );
         form.setLayoutY( 356 );
         group=new Group( group,form );
-        Scene scene = new Scene(group, 800, 700);
+        Scene scene = new Scene(group, 1000, 800);
         scene.getStylesheets().add("/View/MyStyle.css");
         primaryStage.setScene( scene );
         primaryStage.show();
@@ -178,12 +172,73 @@ public class Controller implements Observer {
             btn_loadDic.setDisable( false );
             createLanguageDropDawn();
             Alert result = new Alert(Alert.AlertType.INFORMATION);
+            showQuerySearch();
             time=System.nanoTime()*Math.pow(10,-9)-time;
             time=time/60;
             result.setHeaderText("Indexing done in " + String.format("%.3f", time) + " minutes!");
             result.setContentText("number of documents: "+ numOfDocs +"\n" + "number of unique terms: " +uniqueTerms);
             result.showAndWait();
         }
+    }
+
+    /**
+     * create a query text field and a query browse from a file
+     */
+    private void showQuerySearch() {
+        Label querySearch=new Label( "enter a query:" );
+        Label queryFile=new Label( "enter a query file:" );
+        TextField queryPlace = new TextField ();
+        queryFilePlace = new TextField ();
+        queryPlace.setPrefWidth( 350 );
+        querySearch.setLayoutX( 500 );
+        querySearch.setLayoutY( 185 );
+        queryPlace.setLayoutX( 500 );
+        queryPlace.setLayoutY( 230 );
+        queryFile.setLayoutX( 500 );
+        queryFile.setLayoutY( 290 );
+        queryFilePlace.setLayoutX( 500 );
+        queryFilePlace.setLayoutY( 315 );
+        queryFilePlace.setPrefWidth( 230 );
+        Button querySearchButton = new Button("Search");
+        querySearchButton.setOnAction( e->SearchQuery() );
+        querySearchButton.setLayoutX( 880 );
+        querySearchButton.setPrefWidth( 100 );
+        querySearchButton.setLayoutY( 220 );
+        querySearchButton.setPrefHeight( 30 );
+        Button browseQueryFile = new Button("Browse");
+        browseQueryFile.setOnAction( e->chooseQueryFile() );
+        browseQueryFile.setLayoutY( 310 );
+        browseQueryFile.setLayoutX( 750 );
+        browseQueryFile.setPrefWidth( 100 );
+        browseQueryFile.setPrefHeight( 30 );
+        Button browseQuerySearch = new Button("Search");
+        browseQuerySearch.setLayoutY( 310 );
+        browseQuerySearch.setLayoutX( 880 );
+        browseQuerySearch.setPrefWidth( 100 );
+        browseQuerySearch.setPrefHeight( 30 );
+        group=new Group( group,querySearch,queryPlace,queryFile,queryFilePlace,querySearchButton,browseQueryFile,browseQuerySearch );
+        Scene scene = new Scene(group, 1000, 800);
+        scene.getStylesheets().add("/View/MyStyle.css");
+        primaryStage.setScene( scene );
+        System.out.println("check");
+        primaryStage.show();
+    }
+    // open a file chooser for a query file
+    private void chooseQueryFile() {
+        try {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle( "Select a query file" );
+            File selectedFile = fileChooser.showOpenDialog( primaryStage );
+            String dirName = String.valueOf( selectedFile );
+            queryFilePlace.setText( dirName );
+        }
+        catch (Exception e){
+            System.out.println("problem in corpus");
+        }
+    }
+
+    // search a single query
+    private void SearchQuery() {
     }
 
     public void reset(ActionEvent actionEvent) {

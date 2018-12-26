@@ -4,6 +4,7 @@ import ExternalClasses.DocForSearcher;
 import Parse.Parse;
 import Ranker.Ranker;
 
+import javax.xml.crypto.dom.DOMCryptoContext;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,12 +24,20 @@ public class Searcher {
         this.postingPath=postingPath;
         this.toStem=toStem;
     }
+
+    /**
+     * start the searcher
+     * @return the most 50 relevant docs
+     */
     public HashMap<String, DocForSearcher> start(){
         Parse parse=new Parse( true,toStem );
         if(!isFile){
             Ranker ranker=null;
-            ranker=new Ranker( parse.parseForSearcher( queries ),postingPath );
-            printDate(ranker.rank( toStem ));
+            ArrayList<String> parsedTerms=parse.parseForSearcher( queries );
+            parsedTerms=changeToUpperOrLower(parsedTerms);
+            ranker=new Ranker( parsedTerms,postingPath,citys,useSemantic,toStem );
+            ranker.rank( );
+            ArrayList<DocForSearcher> rankedDocs= ranker.getDocsWithRank();
         }
         else{
             BufferedReader br=null;
@@ -40,6 +49,35 @@ public class Searcher {
             }
         }
         return null;
+    }
+
+    private ArrayList<String> changeToUpperOrLower(ArrayList<String> parsedTerms) {
+        ArrayList<String> upperOrLowerTerms=new ArrayList<>(  );
+        for (int i = 0; i < parsedTerms.size(); i++) {
+            parsedTerms.set( i,parsedTerms.get( i ).toLowerCase() );
+        }
+        BufferedReader br=null;
+        try {
+            if(toStem)
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(postingPath+ "\\" + "withStemming" + "\\" + "dictionary" + ".txt"))));
+            else
+                br=new BufferedReader(new InputStreamReader(new FileInputStream(new File(postingPath+ "\\" + "withoutStemming" + "\\" + "dictionary" + ".txt"))));
+            parseFileAndSendToParser(br);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        String line=null;
+        try {
+            while ((line = br.readLine()) != null){
+                String term=line.split( "#" )[0];
+                if(parsedTerms.contains( term )||parsedTerms.contains( term.toLowerCase() ))
+                    upperOrLowerTerms.add(term);
+            }
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
+        return upperOrLowerTerms;
     }
 
     private void printDate(HashMap<String, DocForSearcher> rank) {
@@ -66,8 +104,10 @@ public class Searcher {
                     query=query.substring( 0,query.length()-1 );
                     Parse parse=new Parse( true,toStem );
                     ArrayList<String> termsToRanker=parse.parseForSearcher( query );
-                    Ranker ranker=new Ranker( termsToRanker, postingPath );
-                    HashMap<String,DocForSearcher> afterRank=ranker.rank( toStem );
+                    termsToRanker=changeToUpperOrLower( termsToRanker );
+                    Ranker ranker=new Ranker( termsToRanker, postingPath,citys,useSemantic,toStem );
+                    ranker.rank(  );
+                    ArrayList<DocForSearcher> rankedDocs=ranker.getDocsWithRank();
                 }
             }
         }
