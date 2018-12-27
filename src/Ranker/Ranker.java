@@ -384,4 +384,9 @@ public class Ranker {
             System.out.println("DocId: "+d.getDocID()+" rank: " + d.rank);
         }
     }
+
+    public void printData() {
+        for(DocForSearcher doc:withRank.values())
+            System.out.println(doc.getDocID());
+    }
 }

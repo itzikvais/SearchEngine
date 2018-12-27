@@ -15,7 +15,7 @@ public class Synonyms {
     public static void main(String[] args) throws Exception {
         Synonyms http = new Synonyms();
 
-        String[] syns=http.searchSynonym("CAR");
+        String[] syns=http.searchSynonym("car");
         if(syns!=null) {
             for (int i = 0; i < syns.length; i++) {
                 System.out.println( syns[i] );

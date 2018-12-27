@@ -409,7 +409,12 @@ public class Indexer {
 
     /* cities functions */
     public HashSet<String> getCities(){
-        return (HashSet<String>) cities.keySet();
+        HashSet<String> toReturn=new HashSet<String>(  );
+        for(String city:cities.keySet()) {
+            if(city.length()>=2)
+                toReturn.add( city );
+        }
+        return toReturn;
     }
     public void createCityFile() throws FileNotFoundException {
         File CityFile = new File(postingDirPath +"\\" + "cityFile" + ".txt");
