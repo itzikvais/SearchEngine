@@ -81,7 +81,6 @@ public class Parse {
             for (int j = 0; j <lines.length ; j++) {//parse any line in the doc
                 parseLine( lines[j].split("\\s+") );
             }
-
             mergeTerms();
             doc.sort();
             docsToIndexer.add( doc );

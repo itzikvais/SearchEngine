@@ -1,14 +1,15 @@
 package Model;
 
 import Controller.Controller;
+import ExternalClasses.DocForSearcher;
 import ReadFile.ReadFile;
+import Searcher.Searcher;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Observable;
+import java.util.*;
 
 public class Model extends Observable implements ModelInt {
     private ReadFile rf;
@@ -36,9 +37,9 @@ public class Model extends Observable implements ModelInt {
         this.cont=c;
     }
     @Override
-    public HashSet<String> start(String corpusPath, String filesPath, boolean toStem) throws IOException {
+    public HashSet<String>[] start(String corpusPath, String filesPath, boolean toStem) throws IOException {
         rf=new ReadFile( corpusPath,filesPath );
-        HashSet<String> toReturn=rf.start(toStem);
+        HashSet<String>[] toReturn=rf.start(toStem);
         cont.uniqueTerms=rf.getIndexer().totalUniqueTerms;
         cont.numOfDocs=rf.getIndexer().totalDocsNum;
         return toReturn;
@@ -61,5 +62,27 @@ public class Model extends Observable implements ModelInt {
         setChanged();
         notifyObservers();
     }
+
+    @Override
+    public ArrayList<DocForSearcher> searchSingleQuery(String query, ArrayList<String> cities, String postingPath, boolean stem, boolean selected) {
+        Searcher searcher=new Searcher( cities,query,false,selected,stem,postingPath );
+        HashMap<String,DocForSearcher> docs=searcher.start();
+        ArrayList<DocForSearcher> toReturn=new ArrayList<>(  );
+        if(docs==null)
+            return null;
+        for(DocForSearcher doc:docs.values()){
+            toReturn.add(doc);
+        }
+        toReturn.sort( new Comparator<DocForSearcher>() {
+            @Override
+            public int compare(DocForSearcher o1, DocForSearcher o2) {
+                if(o1.rank>o2.rank)
+                    return 1;
+                return 0;
+            }
+        } );
+        return toReturn;
+    }
+
 
 }

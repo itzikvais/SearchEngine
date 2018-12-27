@@ -25,7 +25,7 @@ public class ReadFile {
 
     public ReadFile(String path, String postingsPath) {
         this.swPath=path;
-        this.corpusPath = path+"\\miniCorpus";
+        this.corpusPath = path+"/corpusTest";
         this.postingDirPath = postingsPath;
     }
     public void setCorpusPath(String f){
@@ -35,7 +35,7 @@ public class ReadFile {
         postingDirPath = f;
     }
 
-    public HashSet<String> start(boolean toStem) throws IOException {
+    public HashSet<String>[] start(boolean toStem) throws IOException {
         if (toStem){
             indexer = new Indexer(postingDirPath+ "\\" + "withStemming");
             File stemDir = new File(postingDirPath+ "\\" + "withStemming" );
@@ -139,7 +139,11 @@ public class ReadFile {
             e.printStackTrace();
         }
         writeDataForRanker();
-        return indexer.getLanguages();
+        HashSet<String>[] cityAndLang;
+        cityAndLang=new HashSet[2];
+        cityAndLang[0]=indexer.getLanguages();
+        cityAndLang[1]=indexer.getCities();
+        return cityAndLang;
     }
     private void writeDataForRanker() {
         //create dataForRanker file
@@ -177,7 +181,6 @@ public class ReadFile {
         }
         indexer.setDocsFromParser(docsFromParse);
         indexer.indexChunk(documentsFilePW,entitiesFilePW);
-
         docsBuffer.clear();
         docsBuffer=new ArrayList<String[]>();
     }

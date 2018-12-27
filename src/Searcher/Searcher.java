@@ -38,6 +38,8 @@ public class Searcher {
             ranker=new Ranker( parsedTerms,postingPath,citys,useSemantic,toStem );
             ranker.rank( );
             ArrayList<DocForSearcher> rankedDocs= ranker.getDocsWithRank();
+            ranker.printData();
+            printDate( rankedDocs );
         }
         else{
             BufferedReader br=null;
@@ -80,8 +82,8 @@ public class Searcher {
         return upperOrLowerTerms;
     }
 
-    private void printDate(HashMap<String, DocForSearcher> rank) {
-        for (DocForSearcher d:rank.values()) {
+    private void printDate(ArrayList<DocForSearcher> rankedDocs) {
+        for (DocForSearcher d:rankedDocs) {
             System.out.println(d.getDocID() +" :"+d.rank);
         }
     }
@@ -117,7 +119,7 @@ public class Searcher {
     }
 
     public static void main(String[] args) {
-        Searcher searcher=new Searcher( null,"ISRAEL PALESTINE",false,true,false,"/Users/itzikvais/Documents/ISE/year c/ir/reset\\withoutStemming" );
+        Searcher searcher=new Searcher( null,"ISRAEL PALESTINE",false,true,false,"/Users/itzikvais/Documents/ISE/year c/ir/reset" );
         searcher.start();
     }
 }
