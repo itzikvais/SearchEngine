@@ -403,7 +403,7 @@ public class Parse {
     private void addStopwords(String path) {
 
         try {
-            BufferedReader br = new BufferedReader( new FileReader( path+"/stop_words" ) );
+            BufferedReader br = new BufferedReader( new FileReader( path+"\\stop_words.txt" ) );
             String st;
             while ((st = br.readLine()) != null){
                 stopWords.add( st );

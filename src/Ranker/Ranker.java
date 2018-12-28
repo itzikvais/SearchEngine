@@ -310,7 +310,6 @@ public class Ranker {
         }
         return docsByCity;
     }
-
     private ArrayList<DocForSearcher> getDocsByCity(ArrayList<String> citiesFromUser) {
         ArrayList<DocForSearcher> docsByCity = new ArrayList<>();
         BufferedReader postingFileBR = null;
@@ -384,7 +383,6 @@ public class Ranker {
             System.out.println("DocId: "+d.getDocID()+" rank: " + d.rank);
         }
     }
-
     public void printData() {
         for(DocForSearcher doc:withRank.values())
             System.out.println(doc.getDocID());
