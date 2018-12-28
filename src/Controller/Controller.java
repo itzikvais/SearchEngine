@@ -50,6 +50,7 @@ public class Controller implements Observer {
     private boolean load;
     private TextField queryFilePlace;
     private TextField queryPlace;
+    private TextField queryResult;
     private String postingPath;
     private CheckBox useSemantic;
     private int height=50;
@@ -222,8 +223,10 @@ public class Controller implements Observer {
     private void showQuerySearch() {
         Label querySearch=new Label( "enter a query:" );
         Label queryFile=new Label( "enter a query file:" );
+        Label resultFile=new Label( "query result destination:" );
         useSemantic=new CheckBox(  );
         Label semantic=new Label( "use semantic search" );
+        queryResult=new TextField();
         queryPlace = new TextField ();
         queryFilePlace = new TextField ();
         queryPlace.setPrefWidth( 350 );
@@ -240,6 +243,17 @@ public class Controller implements Observer {
         queryFilePlace.setLayoutX( 500 );
         queryFilePlace.setLayoutY( 315 );
         queryFilePlace.setPrefWidth( 230 );
+        resultFile.setLayoutX(520);
+        resultFile.setLayoutY(390);
+        queryResult.setLayoutX(520);
+        queryResult.setLayoutY(410);
+        queryResult.setPrefWidth(210);
+        Button browseResult = new Button("Browse");
+        browseResult.setOnAction(e->chooseResultDestinationFolder());
+        browseResult.setLayoutX( 750 );
+        browseResult.setPrefWidth( 100 );
+        browseResult.setLayoutY( 400 );
+        browseResult.setPrefHeight( 30 );
         Button querySearchButton = new Button("Search");
         querySearchButton.setOnAction( e->SearchQuery() );
         querySearchButton.setLayoutX( 880 );
@@ -253,17 +267,53 @@ public class Controller implements Observer {
         browseQueryFile.setPrefWidth( 100 );
         browseQueryFile.setPrefHeight( 30 );
         Button browseQuerySearch = new Button("Search");
+        browseQuerySearch.setOnAction(e-> searchQueryFile());
         browseQuerySearch.setLayoutY( 310 );
         browseQuerySearch.setLayoutX( 880 );
         browseQuerySearch.setPrefWidth( 100 );
         browseQuerySearch.setPrefHeight( 30 );
-        group=new Group( group,querySearch,queryPlace,queryFile,queryFilePlace,querySearchButton,browseQueryFile,browseQuerySearch,useSemantic,semantic );
+        group=new Group( group,querySearch,queryPlace,queryFile,queryFilePlace,querySearchButton,browseQueryFile,browseQuerySearch,useSemantic,semantic,resultFile,browseResult,queryResult );
         Scene scene = new Scene(group, 1000, 800);
         scene.getStylesheets().add("/View/MyStyle.css");
         primaryStage.setScene( scene );
         System.out.println("check");
         primaryStage.show();
     }
+
+    /**
+     * search a couple of queries from a file
+     */
+    private void searchQueryFile() {
+        postingPath=txtfld_path.getText();
+        ArrayList<String> cities= new ArrayList<>(  );
+        addChoosedCities(cities);
+        if(queryResult.getText()==null||queryResult.getText().length()<1){
+            Alert alert= new Alert(Alert.AlertType.WARNING);
+            alert.setContentText("you must choose query result destination");
+            return;
+        }
+        if(queryFilePlace.getText().length()<1){
+            Alert queryWarning=new Alert( Alert.AlertType.WARNING );
+            queryWarning.setContentText( "please Insert a query" );
+            queryWarning.showAndWait();
+            return;
+        }
+        myModel.searchFileQuery(queryFilePlace.getText(),cities,postingPath,queryResult.getText(),stem,useSemantic.isSelected());
+    }
+
+    private void chooseResultDestinationFolder() {
+        try {
+            DirectoryChooser dirChooser = new DirectoryChooser();
+            dirChooser.setTitle( "Select a folder" );
+            File selectedDir = dirChooser.showDialog( primaryStage );
+            String dirName = String.valueOf( selectedDir );
+            queryResult.setText( dirName );
+        }
+        catch (Exception e){
+            System.out.println("problem in files destination");
+        }
+    }
+
     // open a file chooser for a query file
     private void chooseQueryFile() {
         try {
@@ -280,8 +330,14 @@ public class Controller implements Observer {
 
     // search a single query
     private void SearchQuery() {
+        postingPath=txtfld_path.getText();
         ArrayList<String> cities= new ArrayList<>(  );
         addChoosedCities(cities);
+        if(queryResult.getText()==null||queryResult.getText().length()<1){
+            Alert alert= new Alert(Alert.AlertType.WARNING);
+            alert.setContentText("you must choose query result destination");
+            return;
+        }
         if(queryPlace.getText().length()<1){
             Alert queryWarning=new Alert( Alert.AlertType.WARNING );
             queryWarning.setContentText( "please Insert a query" );
@@ -289,7 +345,7 @@ public class Controller implements Observer {
             return;
         }
         String query= queryPlace.getText();
-        ArrayList<DocForSearcher> docs=myModel.searchSingleQuery(query,cities,postingPath,stem,useSemantic.isSelected());
+        ArrayList<DocForSearcher> docs=myModel.searchSingleQuery(query,cities,postingPath,queryResult.getText(),stem,useSemantic.isSelected());
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/View/ViewDocuments.fxml"));
         try {
             root = (Parent) fxmlLoader.load();
@@ -348,9 +404,11 @@ public class Controller implements Observer {
      * @param cities
      */
     private void addChoosedCities(ArrayList<String> cities) {
-        for (int i = 0; i < citiesMenu.getItems().size(); i++) {
-            if(((CustomMenuItem) citiesMenu.getItems().get( i )).isHideOnClick())
-                cities.add(((CustomMenuItem) citiesMenu.getItems().get( i )).getText());
+        ObservableList<MenuItem> list=citiesMenu.getItems();
+        for(MenuItem m:list){
+            if(((CheckBox)((CustomMenuItem)m).getContent()).isSelected()) {
+                cities.add(((CheckBox)((CustomMenuItem)m).getContent()).getText());
+            }
         }
     }
 

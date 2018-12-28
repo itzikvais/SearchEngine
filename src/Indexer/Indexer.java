@@ -542,4 +542,12 @@ public class Indexer {
 
         return sb.toString();
     }
+
+    public void clear() {
+        docsFromParser.clear();
+        dictionary.clear();
+        cities.clear();
+        languages.clear();
+        entities.clear();
+    }
 }

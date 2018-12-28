@@ -25,7 +25,7 @@ public class ReadFile {
 
     public ReadFile(String path, String postingsPath) {
         this.swPath=path;
-        this.corpusPath = path+"/corpus";
+        this.corpusPath = path+"\\corpus";
         this.postingDirPath = postingsPath;
     }
     public void setCorpusPath(String f){
@@ -105,7 +105,7 @@ public class ReadFile {
                     }
                     toDocBuffer[1] = String.valueOf( lineNum ); // doc start line
                     while (!(line == null) && (!line.contains( "</DOC>" ))) {
-                        doc.append( line);
+                        doc.append( line +" ");
                         lineNum++;
                         line = br.readLine();
                     }
@@ -247,5 +247,9 @@ public class ReadFile {
 
     public String showDictionary() throws IOException {
         return indexer.showDictionary();
+    }
+    public void clear(){
+        docsBuffer=null;
+        indexer.clear();
     }
 }
