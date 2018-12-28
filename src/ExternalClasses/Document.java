@@ -175,6 +175,11 @@ public class Document {
         }
     }
 
+    public void setDocTermsAndCount(HashMap<Term, Integer> docTermsAndCount) {
+        this.docTermsAndCount.clear();
+        this.docTermsAndCount = docTermsAndCount;
+    }
+
     public ArrayList<String> getEntities() {
         return entities;
     }
