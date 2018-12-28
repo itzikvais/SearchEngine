@@ -48,8 +48,10 @@ public class ParsePrice implements IParse {
             num= num/1000000;
             if(num%1==0)
                 price= (int)num +" M";
-            else
-                price=num + " M";
+            else {
+                price=String.format("%.2f", num);
+                price = num + " M";
+            }
         }
     }
 

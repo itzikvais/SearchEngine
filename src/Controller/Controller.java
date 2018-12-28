@@ -189,6 +189,7 @@ public class Controller implements Observer {
             endIndexer();
         }
         catch (Exception e){
+            e.printStackTrace();
             System.out.println("problem with start button");
         }
     }
@@ -361,6 +362,7 @@ public class Controller implements Observer {
             myModel.reset();
         }
         catch (Exception e) {
+            e.printStackTrace();
             System.out.println("problem with reset button");
         }
     }

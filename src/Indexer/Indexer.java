@@ -490,13 +490,16 @@ public class Indexer {
                 String[] splited = line.split("#");
                 sb.append(splited[0]);sb.append("#");
                 sb.append(splited[1]);sb.append("#");
-                String[] entities = splited[2].split(",");
-                int counter = 0;
-                for (int i = 0; i < entities.length && counter <5 ; i++) {
-                    if (this.entities.contains(entities[i].split("@")[0])){
-                        sb.append(entities[i]);
-                        sb.append(",");
-                        counter++;
+                String[] entities;
+                if(splited.length>=3) {
+                    entities = splited[2].split( "," );
+                    int counter = 0;
+                    for (int i = 0; i < entities.length && counter < 5; i++) {
+                        if (this.entities.contains( entities[i].split( "@" )[0] )) {
+                            sb.append( entities[i] );
+                            sb.append( "," );
+                            counter++;
+                        }
                     }
                 }
                 sb.deleteCharAt(sb.length()-1);

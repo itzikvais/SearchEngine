@@ -35,6 +35,8 @@ public class Searcher {
             Ranker ranker=null;
             ArrayList<String> parsedTerms=parse.parseForSearcher( queries );
             parsedTerms=changeToUpperOrLower(parsedTerms);
+            for(String s: parsedTerms)
+                System.out.println(s);
             ranker=new Ranker( parsedTerms,postingPath,citys,useSemantic,toStem );
             ranker.rank( );
             ArrayList<DocForSearcher> rankedDocs= ranker.getDocsWithRank();
@@ -53,10 +55,16 @@ public class Searcher {
         return null;
     }
 
+    /**
+     * changing upper case terms to lower case if there is a same lowercase terms in dictionary
+     * @param parsedTerms array list of parsed terms
+     * @return
+     */
     private ArrayList<String> changeToUpperOrLower(ArrayList<String> parsedTerms) {
         ArrayList<String> upperOrLowerTerms=new ArrayList<>(  );
         for (int i = 0; i < parsedTerms.size(); i++) {
             parsedTerms.set( i,parsedTerms.get( i ).toLowerCase() );
+            System.out.println(parsedTerms.get( i ));
         }
         BufferedReader br=null;
         try {
@@ -64,7 +72,7 @@ public class Searcher {
                 br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(postingPath+ "\\" + "withStemming" + "\\" + "dictionary" + ".txt"))));
             else
                 br=new BufferedReader(new InputStreamReader(new FileInputStream(new File(postingPath+ "\\" + "withoutStemming" + "\\" + "dictionary" + ".txt"))));
-            parseFileAndSendToParser(br);
+            //parseFileAndSendToParser(br);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -72,8 +80,11 @@ public class Searcher {
         try {
             while ((line = br.readLine()) != null){
                 String term=line.split( "#" )[0];
-                if(parsedTerms.contains( term )||parsedTerms.contains( term.toLowerCase() ))
+                if(parsedTerms.contains( term )||parsedTerms.contains( term.toLowerCase() )){
                     upperOrLowerTerms.add(term);
+                    System.out.println(term);
+                }
+
             }
         }
         catch (Exception e){
