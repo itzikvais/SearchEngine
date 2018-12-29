@@ -12,6 +12,7 @@ import java.util.HashMap;
 public class Searcher {
     private ArrayList<String> citys;
     private String queries;
+    private String resultPath;
     private boolean isFile;
     private boolean useSemantic;
     private String postingPath;
@@ -121,12 +122,35 @@ public class Searcher {
                     Ranker ranker=new Ranker( termsToRanker, postingPath,citys,useSemantic,toStem );
                     ranker.rank(  );
                     ArrayList<DocForSearcher> rankedDocs=ranker.getDocsWithRank();
+
+                    //create PrintWriter
+                    File resultFile = new File(resultPath);
+                    if (resultFile.exists()) resultFile.delete();
+
+                    PrintWriter resultFilePW = null;
+                    try {
+                        resultFilePW = new PrintWriter(new FileOutputStream(resultFile, true));
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                    if (resultFilePW == null) {
+                        System.out.println("resultFile found!! - Cannot create resultFilePW");
+                    }
+
+                    //fill with data
+                    writeToFile(resultFilePW,queryNum,0,rankedDocs);
+
+                    resultFilePW.flush();
+                    resultFilePW.close();
                 }
             }
         }
         catch (Exception e){
             e.printStackTrace();
         }
+    }
+
+    private void writeToFile(PrintWriter resultFilePW, int queryNum, int i, ArrayList<DocForSearcher> rankedDocs) {
     }
 
     public static void main(String[] args) {
