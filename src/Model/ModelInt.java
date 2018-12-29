@@ -17,5 +17,7 @@ public interface ModelInt {
     void loadDictionary(boolean b);
 
 
-    ArrayList<DocForSearcher> searchSingleQuery(String query, ArrayList<String> cities, String postingPath, boolean stem, boolean selected);
+    ArrayList<DocForSearcher> searchSingleQuery(String query, ArrayList<String> cities, String postingPath,String resultFile, boolean stem, boolean selected);
+
+    void searchFileQuery(String text, ArrayList<String> cities, String postingPath, String text1, boolean stem, boolean selected);
 }

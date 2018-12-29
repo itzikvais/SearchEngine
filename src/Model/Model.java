@@ -64,8 +64,9 @@ public class Model extends Observable implements ModelInt {
     }
 
     @Override
-    public ArrayList<DocForSearcher> searchSingleQuery(String query, ArrayList<String> cities, String postingPath, boolean stem, boolean selected) {
-        Searcher searcher=new Searcher( cities,query,false,selected,stem,postingPath );
+    public ArrayList<DocForSearcher> searchSingleQuery(String query, ArrayList<String> cities, String postingPath,String resultFile, boolean stem, boolean selected) {
+        rf.clear();
+        Searcher searcher=new Searcher( cities,query,false,selected,stem,postingPath,resultFile );
         HashMap<String,DocForSearcher> docs=searcher.start();
         ArrayList<DocForSearcher> toReturn=new ArrayList<>(  );
         if(docs==null)
@@ -82,6 +83,13 @@ public class Model extends Observable implements ModelInt {
             }
         } );
         return toReturn;
+    }
+
+    @Override
+    public void searchFileQuery(String query, ArrayList<String> cities, String postingPath, String resultFile, boolean stem, boolean selected) {
+        rf.clear();
+        Searcher searcher=new Searcher( cities,query,true,selected,stem,postingPath,resultFile );
+        searcher.start();
     }
 
 

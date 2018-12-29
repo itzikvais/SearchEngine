@@ -21,6 +21,7 @@ public class Ranker {
     private HashMap<String,ArrayList<String>> titlesInDocs;
     private int totalDocs;
     private double avgDocLength;
+    private static int term=0;
 
     public Ranker(ArrayList<String> queryTerms,String postingDirPath,ArrayList<String> cities,boolean toSynonym,boolean toStem) {
         this.queryTerms = queryTerms;
@@ -50,6 +51,10 @@ public class Ranker {
         }
     }
 
+    public HashMap<String, DocForSearcher> getWithRank() {
+        return withRank;
+    }
+
     public void rank(){
         if(queryTerms == null || queryTerms.size()==0) return;
         ArrayList<String> finalQueryTerms = null;
@@ -57,8 +62,6 @@ public class Ranker {
         //initial
         for (String qi : queryTerms) {
             finalQueryTerms = new ArrayList<>();
-            System.out.println();
-            System.out.println("qi = "+qi);
             if(toSynonym) {
                 String[] symArray;
                 try {
@@ -72,7 +75,6 @@ public class Ranker {
                                 String adaptedSym = adaptToDic(sym, toStem);
                                 if (adaptedSym != null){
                                     finalQueryTerms.add(sym);
-                                    System.out.println(adaptedSym + " added to finalQueryTerms");
                                 }
                             }
                         }
@@ -85,9 +87,7 @@ public class Ranker {
                 finalQueryTerms = new ArrayList<>();
             }
             finalQueryTerms.add(qi);
-            System.out.println(qi + " added to finalQueryTerms");
             bm25Update(finalQueryTerms);
-            System.out.println("BM25 updated");
         }
     }
     private String adaptToDic(String sym, boolean toStem) {
@@ -129,15 +129,12 @@ public class Ranker {
         return null;
     }
     private void bm25Update(ArrayList<String> finalQueryTerms) {
-        System.out.println("final query trms:");
-        for (String qi : finalQueryTerms){
-            System.out.println("qi = "+qi);
-        }
         //refresh for next qi
         currTermDocAndSynonymsCount.clear();
         currTermDocAndSynonymsCount = new HashMap<>();
         int docNum = 0;
         for (String qi :finalQueryTerms){
+            System.out.println(qi);
             docNum += getDocsNum(qi);
         }
 
@@ -146,9 +143,7 @@ public class Ranker {
             updateDocLengthEntitiesAndCities(doc);
         }
         //calculate idf for qwery term
-        System.out.println("totalDocs="+totalDocs+" docNum="+docNum);
         double idf = Math.log10((totalDocs - docNum + 0.5)/(docNum +0.5));
-        System.out.println("idf:"+idf);
         //foreach doc that related to one qwery term (qi and it's synonyms) update it rank.
         for (String docId : currTermDocAndSynonymsCount.keySet()){
             int docLength = withRank.get(docId).docLength;
@@ -168,6 +163,8 @@ public class Ranker {
         }
     }
     private int getDocsNum(String qi){
+        System.out.println("term"+term);
+        term++;
         int docNum = 0;
         //create buffer reader
         BufferedReader br = null;
@@ -192,6 +189,9 @@ public class Ranker {
                 while (line != null) {
                     String term = line.split("#")[0].trim();
                     if (term.equals(qi)) break;
+                    if(term.compareTo(qi)>0) {
+                        return 0;
+                    }
                     line = br.readLine();
                 }
                 if (line == null){
@@ -292,23 +292,35 @@ public class Ranker {
     public ArrayList<DocForSearcher> getDocsWithRank(){
         ArrayList<DocForSearcher> docs = new ArrayList<>(withRank.values());
         ArrayList<DocForSearcher> docsByCity = new ArrayList<>();
-        if (cities != null){
-            for(DocForSearcher doc : docs){
-                if(cities.contains(doc.cityOfOrigin))
+        if (cities != null&& cities.size()>=1) {
+            for (DocForSearcher doc : docs) {
+                if (cities.contains(doc.cityOfOrigin))
                     docsByCity.add(doc);
             }
             docsByCity.addAll(getDocsByCity(cities));
+
+            docsByCity.sort(new Comparator<DocForSearcher>() {
+                @Override
+                public int compare(DocForSearcher o1, DocForSearcher o2) {
+                    return Double.compare(o2.rank, o1.rank);
+                }
+            });
+            if (docsByCity.size() > 50) {
+                docsByCity = new ArrayList<>(docsByCity.subList(0, 50));
+            }
+            return docsByCity;
         }
-        docsByCity.sort(new Comparator<DocForSearcher>() {
+
+        docs.sort(new Comparator<DocForSearcher>() {
             @Override
             public int compare(DocForSearcher o1, DocForSearcher o2) {
-                return Double.compare(o2.rank,o1.rank);
+                return Double.compare(o2.rank, o1.rank);
             }
         });
-        if (docsByCity.size() > 50){
-            docsByCity = (ArrayList<DocForSearcher>) docsByCity.subList(0,49);
-        }
-        return docsByCity;
+        if(docs.size()>50)
+            docs=new ArrayList<>(docs.subList(0, 50));
+        return docs;
+
     }
     private ArrayList<DocForSearcher> getDocsByCity(ArrayList<String> citiesFromUser) {
         ArrayList<DocForSearcher> docsByCity = new ArrayList<>();
@@ -355,7 +367,6 @@ public class Ranker {
     }
 
     public static void main(String[] args) {
-        System.out.println("start");
         String postingDirPath = "C:\\Users\\tsizer\\Documents\\לימודים\\שנה ג\\סמסטר א\\אחזור מידע\\מנוע\\postingFileCheck";
         ArrayList<String> queryTerms = new ArrayList<>();
         queryTerms.add("exchange");
@@ -366,22 +377,13 @@ public class Ranker {
 //        citiesArrayList.add("PARIS");
 
         Ranker r = new Ranker(queryTerms, postingDirPath,citiesArrayList,false,false);
-        System.out.println();
-        System.out.println("ranker created");
         r.rank();
-        System.out.println();
-        System.out.println("rank done");
 
         for (String docID : r.withRank.keySet()) {
             double rank = r.withRank.get(docID).rank;
-            System.out.println("DocId: "+docID+" rank: " + rank);
         }
 
-        System.out.println("*************************");
         ArrayList<DocForSearcher> sorted = r.getDocsWithRank();
-        for (DocForSearcher d : sorted){
-            System.out.println("DocId: "+d.getDocID()+" rank: " + d.rank);
-        }
     }
     public void printData() {
         for(DocForSearcher doc:withRank.values())
