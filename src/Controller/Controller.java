@@ -298,7 +298,7 @@ public class Controller implements Observer {
             queryWarning.showAndWait();
             return;
         }
-        myModel.searchFileQuery(queryFilePlace.getText(),cities,postingPath,queryResult.getText(),stem,useSemantic.isSelected());
+        myModel.searchFileQuery(queryFilePlace.getText(),cities,postingPath,queryResult.getText(),stemmer.isSelected(),useSemantic.isSelected());
     }
 
     private void chooseResultDestinationFolder() {
@@ -345,7 +345,7 @@ public class Controller implements Observer {
             return;
         }
         String query= queryPlace.getText();
-        ArrayList<DocForSearcher> docs=myModel.searchSingleQuery(query,cities,postingPath,queryResult.getText(),stem,useSemantic.isSelected());
+        ArrayList<DocForSearcher> docs=myModel.searchSingleQuery(query,cities,postingPath,queryResult.getText(),stemmer.isSelected(),useSemantic.isSelected());
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/View/ViewDocuments.fxml"));
         try {
             root = (Parent) fxmlLoader.load();

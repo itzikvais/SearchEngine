@@ -22,10 +22,11 @@ public class ReadFile {
     private PrintWriter documentsFilePW;
     private PrintWriter entitiesFilePW;
     private int totalTerms;
+    private boolean toStem;
 
     public ReadFile(String path, String postingsPath) {
         this.swPath=path;
-        this.corpusPath = path+"\\miniCorpus";
+        this.corpusPath = path+"\\corpus";
         this.postingDirPath = postingsPath;
     }
     public void setCorpusPath(String f){
@@ -36,6 +37,7 @@ public class ReadFile {
     }
 
     public HashSet<String>[] start(boolean toStem) throws IOException {
+        this.toStem=toStem;
         if (toStem){
             indexer = new Indexer(postingDirPath+ "\\" + "withStemming");
             File stemDir = new File(postingDirPath+ "\\" + "withStemming" );
@@ -148,7 +150,11 @@ public class ReadFile {
     }
     private void writeDataForRanker() {
         //create dataForRanker file
-        File dataForRanker = new File(System.getProperty("user.dir")+"\\dataForRanker"+".txt");
+        File dataForRanker=null;
+        if(toStem)
+            dataForRanker = new File(postingDirPath+"\\withStemming"+"\\dataForRanker.txt");
+        else
+            dataForRanker = new File(postingDirPath+"\\withoutStemming"+"\\dataForRanker.txt");
         if (dataForRanker.exists()) dataForRanker.delete();
 
         PrintWriter dataForRankerPW = null;

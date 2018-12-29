@@ -35,7 +35,10 @@ public class Ranker {
         this.cities = cities;
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(System.getProperty("user.dir")+"\\dataForRanker.txt"))));
+            if(toStem)
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(postingDirPath+"\\withStemming"+"\\dataForRanker.txt"))));
+            else
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(postingDirPath+"\\withoutStemming"+"\\dataForRanker.txt"))));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -139,9 +142,9 @@ public class Ranker {
         }
 
         //foreach doc update doc length and entities
-        for(DocForSearcher doc : withRank.values()){
-            updateDocLengthEntitiesAndCities(doc);
-        }
+
+        updateDocLengthEntitiesAndCities();
+        System.out.println( "docNum: "+docNum+ " totalDocs: "+ totalDocs);
         //calculate idf for qwery term
         double idf = Math.log10((totalDocs - docNum + 0.5)/(docNum +0.5));
         //foreach doc that related to one qwery term (qi and it's synonyms) update it rank.
@@ -185,8 +188,9 @@ public class Ranker {
                 postingFileFullPath = postingFilesDirFullPath + "\\CHO.txt";
             else if (firstChar >= 'P' && firstChar <= 'Z')
                 postingFileFullPath = postingFilesDirFullPath + "\\CPZ.txt";
-            else if (firstChar >= 'a' && firstChar <= 'g')
+            else if (firstChar >= 'a' && firstChar <= 'g') {
                 postingFileFullPath = postingFilesDirFullPath + "\\ag.txt";
+            }
             else if (firstChar >= 'h' && firstChar <= 'o')
                 postingFileFullPath = postingFilesDirFullPath + "\\ho.txt";
             else if (firstChar >= 'p' && firstChar <= 'z')
@@ -217,7 +221,6 @@ public class Ranker {
 
                 //use the line
                 String[] splited = line.split("#");
-                String term = splited[0];
                 String docsString[] = splited[1].split(";");
                 docNum = docsString.length;
 
@@ -239,14 +242,14 @@ public class Ranker {
                     }
                 }
             }
+            br.close();
         }
         catch (Exception e) {
             e.printStackTrace();
         }
         return docNum;
     }
-    private void updateDocLengthEntitiesAndCities(DocForSearcher doc) {
-        String docID = doc.getDocID();
+    private void updateDocLengthEntitiesAndCities() {
         //find entities
         //create buffer reader
         BufferedReader finalEntitiesFileBR = null;
@@ -268,31 +271,37 @@ public class Ranker {
                 line = finalEntitiesFileBR.readLine();
                 while (line != null) {
                     String currDocID = line.split("#")[0];
-                    if (currDocID.equals(docID)) break;
+                    if (withRank.containsKey(currDocID)){
+                        //use the line
+                        if(line==null)
+                            System.out.println(" finalEntitiesFile");
+                        DocForSearcher doc=withRank.get(currDocID);
+                        String[] splited = line.split("#");
+                        doc.docLength = parseInt(splited[1]);
+                        if(splited.length>2) {
+                            String docEntities = splited[2];
+                            doc.entities = new ArrayList<>(Arrays.asList(docEntities));
+                        }
+                    }
                     line = finalEntitiesFileBR.readLine();
                 }
-                //use the line
-                if(line==null)
-                    System.out.println(docID+" finalEntitiesFile");
-                String[] splited = line.split("#");
-                doc.docLength = parseInt(splited[1]);
-                String docEntities = splited[2];
-                doc.entities = new ArrayList<>(Arrays.asList(docEntities));
-
+                finalEntitiesFileBR.close();
                 line = documentsFileBR.readLine();
                 while (line != null) {
                     String currDocID = line.split("#")[0];
-                    if (currDocID.equals(docID)) break;
+                    if (withRank.containsKey(currDocID)){
+                        if(line==null)
+                            System.out.println(" documentFile");
+                        DocForSearcher doc=withRank.get(currDocID);
+                        String []splited = line.split("#");
+                        String[] data = splited[1].split(",");
+                        String city = data[3].split(":")[0].trim();
+                        doc.cityOfOrigin=city;
+                    }
                     line = documentsFileBR.readLine();
                 }
-                if(line==null)
-                    System.out.println(docID+" documentFile");
-                splited = line.split("#");
-                String[] data = splited[1].split(",");
-                String city = data[3].split(":")[0].trim();
-                doc.cityOfOrigin=city;
-
             }
+            documentsFileBR.close();
         }
         catch (Exception e){
             e.printStackTrace();
