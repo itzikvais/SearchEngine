@@ -37,7 +37,7 @@ public class Searcher {
             e.printStackTrace();
         }
         if (resultFilePW == null) {
-            System.out.println("resultFile found!! - Cannot create resultFilePW");
+            System.out.println("resultFile is null!! - Cannot create resultFilePW");
         }
     }
 
