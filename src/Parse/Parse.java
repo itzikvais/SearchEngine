@@ -35,6 +35,7 @@ public class Parse {
         this.toStem=toStem;
         doc=new Document( null,null,0,0 );
         numOfPArse++;
+        stem=new Stemmer();
     }
     /**
      *

@@ -70,7 +70,9 @@ public class Synonyms {
         }
         if(synWords.length()>0){
             synWords=synWords.substring( 0,synWords.length()-1 );
-            return synWords.split( "," );
+            String[] result=new String[1];
+            result[0]=synWords.split( "," )[0];
+            return result;
         }
         return null;
 
@@ -81,7 +83,11 @@ public class Synonyms {
         private String word;
         private int score;
 
-        public String getWord() {return this.word;}
+        public String getWord() {
+            if(score>5000)
+                return this.word;
+            return " ";
+        }
         public int getScore() {return this.score;}
     }
 

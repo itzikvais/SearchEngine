@@ -155,15 +155,15 @@ public class Ranker {
         for (String docId : currTermDocAndSynonymsCount.keySet()){
             int docLength = withRank.get(docId).docLength;
             int freqTermInDoc = currTermDocAndSynonymsCount.get(docId);
-            double rank = (freqTermInDoc*(1.25+1))/(freqTermInDoc+1.25*((1-0.75)+0.75*(docLength/avgDocLength)));
+            double rank = (freqTermInDoc*(1.2+1))/(freqTermInDoc+1.2*((1-0.75)+0.75*(docLength/avgDocLength)));
             rank *= idf;
             if(isDesc)
-                rank=rank*0.5;
+                rank=0.6*rank;
             if(titlesInDocs.containsKey(docId)){
                 ArrayList<String> titlesTerms = titlesInDocs.get(docId);
                 for( String sym : queryTerms){
                     if( titlesTerms.contains(sym)){
-                        rank += idf;
+                        rank += 0.4*idf;
                         break;
                     }
                 }
