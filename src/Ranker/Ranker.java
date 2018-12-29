@@ -168,14 +168,31 @@ public class Ranker {
         int docNum = 0;
         //create buffer reader
         BufferedReader br = null;
-        String postingFileFullPath;
+        String postingFilesDirFullPath;
         if (toStem) {
-            postingFileFullPath = postingDirPath + "\\" + "withStemming" + "\\" + "PostingFile" + ".txt";
+            postingFilesDirFullPath = postingDirPath + "\\" + "withStemming" + "\\" + "PostingFiles";
         } else {
-            postingFileFullPath = postingDirPath + "\\" + "withoutStemming" + "\\" + "PostingFile" + ".txt";
+            postingFilesDirFullPath = postingDirPath + "\\" + "withoutStemming" + "\\" + "PostingFiles";
         }
         try {
-            br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(postingFileFullPath))));
+            char firstChar = qi.charAt(0);
+            String postingFileFullPath = null;
+            if (firstChar >= '0' && firstChar <= '9')
+                postingFileFullPath = postingFilesDirFullPath + "\\numbers.txt";
+            else if (firstChar >= 'A' && firstChar <= 'G')
+                postingFileFullPath = postingFilesDirFullPath + "\\CAG.txt";
+            else if (firstChar >= 'H' && firstChar <= 'O')
+                postingFileFullPath = postingFilesDirFullPath + "\\CHO.txt";
+            else if (firstChar >= 'P' && firstChar <= 'Z')
+                postingFileFullPath = postingFilesDirFullPath + "\\CPZ.txt";
+            else if (firstChar >= 'a' && firstChar <= 'g')
+                postingFileFullPath = postingFilesDirFullPath + "\\ag.txt";
+            else if (firstChar >= 'h' && firstChar <= 'o')
+                postingFileFullPath = postingFilesDirFullPath + "\\ho.txt";
+            else if (firstChar >= 'p' && firstChar <= 'z')
+                postingFileFullPath = postingFilesDirFullPath + "\\pz.txt";
+            if (postingFileFullPath != null)
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(postingFileFullPath))));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -183,7 +200,6 @@ public class Ranker {
         String line = null;
         try {
             if (br != null) {
-
                 //search the line
                 line = br.readLine();
                 while (line != null) {
@@ -233,31 +249,31 @@ public class Ranker {
         String docID = doc.getDocID();
         //find entities
         //create buffer reader
-        BufferedReader postingFileBR = null;
+        BufferedReader finalEntitiesFileBR = null;
         BufferedReader documentsFileBR = null;
         try {
             String path;
             if(toStem)
                 path = postingDirPath + "\\withStemming";
             else path = postingDirPath + "\\withoutStemming";
-            postingFileBR = new BufferedReader(new InputStreamReader(new FileInputStream(new File(path + "\\" + "finalEntitiesFile" + ".txt"))));
+            finalEntitiesFileBR = new BufferedReader(new InputStreamReader(new FileInputStream(new File(path + "\\" + "finalEntitiesFile" + ".txt"))));
             documentsFileBR = new BufferedReader(new InputStreamReader(new FileInputStream(new File(postingDirPath + "\\" + "documentsFile.txt"))));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
         String line = null;
         try {
-            if (postingFileBR != null) {
+            if (finalEntitiesFileBR != null) {
                 //search the line
-                line = postingFileBR.readLine();
+                line = finalEntitiesFileBR.readLine();
                 while (line != null) {
                     String currDocID = line.split("#")[0];
                     if (currDocID.equals(docID)) break;
-                    line = postingFileBR.readLine();
+                    line = finalEntitiesFileBR.readLine();
                 }
                 //use the line
                 if(line==null)
-                    System.out.println(docID+" postingFile");
+                    System.out.println(docID+" finalEntitiesFile");
                 String[] splited = line.split("#");
                 doc.docLength = parseInt(splited[1]);
                 String docEntities = splited[2];

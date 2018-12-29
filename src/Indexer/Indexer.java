@@ -39,11 +39,12 @@ public class Indexer {
         this.entities = new HashSet<>();
         this.chunksCounter = 0;
     }
-    public void delete() {
+    public void clear() {
         docsFromParser.clear();
         dictionary.clear();
         cities.clear();
         languages.clear();
+        entities.clear();
     }
 
     /* getters and setters */
@@ -315,8 +316,10 @@ public class Indexer {
 
             startDeleting(postingDirPath +"\\"+"temp");
             new File(postingDirPath +"\\"+"temp").delete();
+
         } catch(Exception e){e.printStackTrace();}
     }
+
     /* helper functions for MergeSort */
     private void startDeleting(String path) {
         List<String> filesList = new ArrayList<String>();
@@ -346,7 +349,6 @@ public class Indexer {
         }
 
     }
-
     public HashSet<String> getLanguages() {
         return languages;
     }
@@ -416,11 +418,16 @@ public class Indexer {
         }
         return toReturn;
     }
-    public void createCityFile() throws FileNotFoundException {
+    public void createCityFile() {
         File CityFile = new File(postingDirPath +"\\" + "cityFile" + ".txt");
         if (CityFile.exists()) CityFile.delete();
 
-        PrintWriter pw = new PrintWriter(new FileOutputStream(CityFile,true));
+        PrintWriter pw = null;
+        try {
+            pw = new PrintWriter(new FileOutputStream(CityFile,true));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
         if (pw==null){
             System.out.println("Posting folder not found!! - Cannot create cityFile");
             return;
@@ -431,6 +438,7 @@ public class Indexer {
         notCapitalCitiesNum = cities.size();
         capitalCitiesNum = cities.size();
         for(String city : citiesSet) {
+            System.out.println(city);
             StringBuilder toChain = cities.get(city);
             ApiCity apiCity = new ApiCity(city);
             if(apiCity.getCountry() == null) capitalCitiesNum--;
@@ -444,47 +452,40 @@ public class Indexer {
             sb.append(apiCity.getPopulation());sb.append("#");
             sb.append(toChain.toString());
             // city#Country,Currency,Population#docId:123,123,123
+            System.out.println(sb.toString());
             pw.println(sb.toString());
         }
 
         pw.flush();
         pw.close();
     }
-    public void howManyNumbersTerms(){
-        SortedSet<String> termsSet = new TreeSet<>(dictionary.keySet());
-        for (String term : termsSet){
-            if (term.matches("-?\\d+(\\.\\d+)?")) numberTerms++;
-        }
-    }
+//    public void howManyNumbersTerms(){
+//        SortedSet<String> termsSet = new TreeSet<>(dictionary.keySet());
+//        for (String term : termsSet){
+//            if (term.matches("-?\\d+(\\.\\d+)?")) numberTerms++;
+//        }
+//    }
 
     /* entities functions */
     public void createFinalEntitiesFile(PrintWriter entitiesPW){
         //close and create reader buffer
         entitiesPW.flush();
         entitiesPW.close();
-        BufferedReader br = null;
         try {
-            br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(postingDirPath + "\\" + "entitiesFile" + ".txt"))));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+            File oldEntitiesFile = new File(postingDirPath + "\\" + "entitiesFile" + ".txt");
+            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(oldEntitiesFile)));
 
-        //create entities final file
-        PrintWriter finalEntitiesFilePW = null;
-        File finalEntitiesFile = new File(postingDirPath + "\\" + "finalEntitiesFile" + ".txt");
-        if (finalEntitiesFile.exists()) finalEntitiesFile.delete();
-        try {
-            finalEntitiesFilePW = new PrintWriter(new FileOutputStream(finalEntitiesFile, true));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        if (finalEntitiesFilePW  == null) {
-            System.out.println("Posting folder not found!! - Cannot create entitiesFile");
-        }
+            //create entities final file
+            File finalEntitiesFile = new File(postingDirPath + "\\" + "finalEntitiesFile" + ".txt");
+            if (finalEntitiesFile.exists()) finalEntitiesFile.delete();
+            //create print writer
+            PrintWriter finalEntitiesFilePW = new PrintWriter(new FileOutputStream(finalEntitiesFile, true));
+            if (finalEntitiesFilePW  == null) {
+                System.out.println("Posting folder not found!! - Cannot create entitiesFile");
+            }
 
-        //write to the file
-        String line;
-        try {
+            //write to the file
+            String line;
             while (br != null && (line = br.readLine()) != null) {
                 StringBuilder sb = new StringBuilder();
                 String[] splited = line.split("#");
@@ -505,15 +506,18 @@ public class Indexer {
                 sb.deleteCharAt(sb.length()-1);
                 finalEntitiesFilePW.println(sb.toString());
             }
+
             finalEntitiesFilePW.flush();
             finalEntitiesFilePW.close();
             br.close();
+            oldEntitiesFile.delete();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
         }
         catch (Exception e){
             e.printStackTrace();
         }
     }
-
 
 
     public String showDictionary() throws IOException {
@@ -543,11 +547,140 @@ public class Indexer {
         return sb.toString();
     }
 
-    public void clear() {
-        docsFromParser.clear();
-        dictionary.clear();
-        cities.clear();
-        languages.clear();
-        entities.clear();
+    public void splitFinalPostingFile() {
+        //old big posting file
+        File oldPostingFile = new File(finalPostingFilePath);
+        try {
+            //create Buffer reader
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(oldPostingFile)));
+
+            //creating the final divided posting files
+            File postingFiles = new File(postingDirPath + "\\PostingFiles");
+            if(!postingFiles.exists()) {
+                postingFiles.mkdir();
+            }
+            //numbers
+            File numbers = new File(postingDirPath + "\\PostingFiles\\numbers.txt");
+            if (numbers.exists()) numbers.delete();
+            //AG
+            File CAG = new File(postingDirPath + "\\PostingFiles\\CAG.txt");
+            if (CAG.exists()) CAG.delete();
+            //HO
+            File CHO = new File(postingDirPath + "\\PostingFiles\\CHO.txt");
+            if (CHO.exists()) CHO.delete();
+            //PZ
+            File CPZ = new File(postingDirPath + "\\PostingFiles\\CPZ.txt");
+            if (CPZ.exists()) CPZ.delete();
+            //ag
+            File ag = new File(postingDirPath + "\\PostingFiles\\ag.txt");
+            if (ag.exists()) ag.delete();
+            //ho
+            File ho = new File(postingDirPath + "\\PostingFiles\\ho.txt");
+            if (ho.exists()) ho.delete();
+            //pz
+            File pz = new File(postingDirPath + "\\PostingFiles\\pz.txt");
+            if (pz.exists()) pz.delete();
+
+            //create Print writer
+            PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(numbers)));
+
+            //fill files
+            String line = reader.readLine();
+            char firstChar = line.split("#")[0].charAt(0);
+
+            //numbers
+            while (firstChar < 'A'){
+                writer.println(line);
+
+                line = reader.readLine();
+                if (line == null) break;
+                firstChar = line.split("#")[0].charAt(0);
+            }
+            writer.flush();
+            writer.close();
+            writer = new PrintWriter(new BufferedWriter(new FileWriter(CAG)));
+
+            //AG
+            while (firstChar < 'H'){
+                writer.println(line);
+
+                line = reader.readLine();
+                if (line == null) break;
+                firstChar = line.split("#")[0].charAt(0);
+            }
+            writer.flush();
+            writer.close();
+            writer = new PrintWriter(new BufferedWriter(new FileWriter(CHO)));
+
+            //HO
+            while (firstChar < 'P'){
+                writer.println(line);
+
+                line = reader.readLine();
+                if (line == null) break;
+                firstChar = line.split("#")[0].charAt(0);
+            }
+            writer.flush();
+            writer.close();
+            writer = new PrintWriter(new BufferedWriter(new FileWriter(CPZ)));
+
+            //PZ
+            while (firstChar < 'a'){
+                writer.println(line);
+
+                line = reader.readLine();
+                if (line == null) break;
+                firstChar = line.split("#")[0].charAt(0);
+            }
+            writer.flush();
+            writer.close();
+            writer = new PrintWriter(new BufferedWriter(new FileWriter(ag)));
+
+            //ag
+            while (firstChar < 'h'){
+                writer.println(line);
+
+                line = reader.readLine();
+                if (line == null) break;
+                firstChar = line.split("#")[0].charAt(0);
+            }
+            writer.flush();
+            writer.close();
+            writer = new PrintWriter(new BufferedWriter(new FileWriter(ho)));
+
+            //ho
+            while (firstChar < 'p'){
+                writer.println(line);
+
+                line = reader.readLine();
+                if (line == null) break;
+                firstChar = line.split("#")[0].charAt(0);
+            }
+            writer.flush();
+            writer.close();
+            writer = new PrintWriter(new BufferedWriter(new FileWriter(pz)));
+
+            //pz
+            while (firstChar <= 'z'){
+                writer.println(line);
+
+                line = reader.readLine();
+                if (line == null) break;
+                firstChar = line.split("#")[0].charAt(0);
+            }
+            writer.flush();
+            writer.close();
+
+            //delete the old final posting file
+            reader.close();
+            oldPostingFile.delete();
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
+
+
 }

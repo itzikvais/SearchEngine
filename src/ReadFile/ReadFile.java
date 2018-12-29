@@ -25,7 +25,7 @@ public class ReadFile {
 
     public ReadFile(String path, String postingsPath) {
         this.swPath=path;
-        this.corpusPath = path+"\\corpus";
+        this.corpusPath = path+"\\miniCorpus";
         this.postingDirPath = postingsPath;
     }
     public void setCorpusPath(String f){
@@ -133,6 +133,7 @@ public class ReadFile {
             indexer.createDictionary();
             indexer.createCityFile();
             indexer.createFinalEntitiesFile(entitiesFilePW);
+            indexer.splitFinalPostingFile();
 //            indexer.howManyNumbersTerms();
 //            printData();
         } catch (FileNotFoundException e) {
@@ -190,7 +191,7 @@ public class ReadFile {
     }
 
     public void  reset(){
-        indexer.delete();
+        indexer.clear();
         startDeleting(postingDirPath);
     }
     private void startDeleting(String path) {
