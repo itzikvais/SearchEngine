@@ -236,10 +236,11 @@ public class Parse {
                         range[3]=line[i+3];
                         ParseRange pr=new ParseRange( range );
                         String[] parsed=pr.parse();
-                        for (int j = 0; j <parsed.length ; j++) {
-                            addTerm( parsed[j],title );
+                        if(parsed.length>=1)
+                            addTerm(parsed[0],title);
+                        for (int j = 1; j <parsed.length ; j++) {
+                            parseTerm(parsed[j],null,title,i);
                         }
-
                     }
                     else if (i < line.length - 1)
                         i= parseTerm( line[i], line[i + 1], title,i );
@@ -444,8 +445,10 @@ public class Parse {
             ParseRange pr = new ParseRange( term.split( "-" ) );
             String[] parse = pr.parse();
             if(parse!=null) {
-                for (int i = 0; i < parse.length; i++) {
-                    addTerm( parse[i], title );
+                if(parse.length>=1)
+                    addTerm(parse[0],title);
+                for (int i = 1; i < parse.length; i++) {
+                    parseTerm( parse[i],null, title,i );
                 }
             }
         }

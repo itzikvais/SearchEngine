@@ -87,7 +87,8 @@ public class Model extends Observable implements ModelInt {
 
     @Override
     public void searchFileQuery(String query, ArrayList<String> cities, String postingPath, String resultFile, boolean stem, boolean selected) {
-        rf.clear();
+        if(rf!=null)
+            rf.clear();
         Searcher searcher=new Searcher( cities,query,true,selected,stem,postingPath,resultFile );
         searcher.start();
     }

@@ -121,20 +121,24 @@ public class Controller implements Observer {
     }
 
     private void addCities() {
-        for (String city:this.cities){
-            CheckBox cityCB = new CheckBox(city);
-            CustomMenuItem item = new CustomMenuItem(cityCB);
-            item.setHideOnClick( false );
-            citiesMenu.getItems().add( item );
+        if(this.cities!=null) {
+            for (String city : this.cities) {
+                CheckBox cityCB = new CheckBox(city);
+                CustomMenuItem item = new CustomMenuItem(cityCB);
+                item.setHideOnClick(false);
+                citiesMenu.getItems().add(item);
+            }
         }
     }
 
     private void addLanguages(ComboBox<String> language) {
-        for (String lang:languages) {
-            language.getItems().add(lang);
+        if (languages != null){
+            for (String lang : languages) {
+                language.getItems().add(lang);
+            }
+
         }
     }
-
     public void chooseCorpusFolder(ActionEvent actionEvent){
         try {
             DirectoryChooser dirChooser = new DirectoryChooser();
@@ -198,23 +202,24 @@ public class Controller implements Observer {
     /**
      * create new stage after the indexer has done
      */
-    private void endIndexer() {
-        if(start){
+    public void endIndexer() {
+        postingPath = txtfld_path.getText();
+        btn_start.setDisable(false);
+        btn_reset.setDisable(false);
+        btn_shDic.setDisable(false);
+        btn_loadDic.setDisable(false);
+        createLanguageAndCitiesDropDawn();
+        Alert result = new Alert(Alert.AlertType.INFORMATION);
+        showQuerySearch();
+        if (start){
             start=false;
-            postingPath=txtfld_path.getText();
-            btn_start.setDisable( false );
-            btn_reset.setDisable( false );
-            btn_shDic.setDisable( false );
-            btn_loadDic.setDisable( false );
-            createLanguageAndCitiesDropDawn();
-            Alert result = new Alert(Alert.AlertType.INFORMATION);
-            showQuerySearch();
-            time=System.nanoTime()*Math.pow(10,-9)-time;
-            time=time/60;
+            time = System.nanoTime() * Math.pow(10, -9) - time;
+            time = time / 60;
             result.setHeaderText("Indexing done in " + String.format("%.3f", time) + " minutes!");
-            result.setContentText("number of documents: "+ numOfDocs +"\n" + "number of unique terms: " +uniqueTerms);
+            result.setContentText("number of documents: " + numOfDocs + "\n" + "number of unique terms: " + uniqueTerms);
             result.showAndWait();
-        }
+    }
+
     }
 
     /**
@@ -276,7 +281,6 @@ public class Controller implements Observer {
         Scene scene = new Scene(group, 1000, 800);
         scene.getStylesheets().add("/View/MyStyle.css");
         primaryStage.setScene( scene );
-        System.out.println("check");
         primaryStage.show();
     }
 

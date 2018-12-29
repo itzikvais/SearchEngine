@@ -11,6 +11,7 @@ import static java.lang.Integer.parseInt;
 
 public class Ranker {
     private ArrayList<String> queryTerms;
+    private ArrayList<String> descriptionTerms;
     private Synonyms synonyms;
     private HashMap<String,DocForSearcher> withRank;
     private HashMap<String, Integer> currTermDocAndSynonymsCount;
@@ -58,6 +59,10 @@ public class Ranker {
         return withRank;
     }
 
+    public void setDescriptionTerms(ArrayList<String> descriptionTerms) {
+        this.descriptionTerms = descriptionTerms;
+    }
+
     public void rank(){
         if(queryTerms == null || queryTerms.size()==0) return;
         ArrayList<String> finalQueryTerms = null;
@@ -90,7 +95,10 @@ public class Ranker {
                 finalQueryTerms = new ArrayList<>();
             }
             finalQueryTerms.add(qi);
-            bm25Update(finalQueryTerms);
+            bm25Update(finalQueryTerms,false);
+        }
+        if(descriptionTerms!=null &&!descriptionTerms.isEmpty()){
+            bm25Update(descriptionTerms,true);
         }
     }
     private String adaptToDic(String sym, boolean toStem) {
@@ -131,28 +139,26 @@ public class Ranker {
         System.out.println("somthing wrong with finding synonyms as they show in Dictionary");
         return null;
     }
-    private void bm25Update(ArrayList<String> finalQueryTerms) {
+    private void bm25Update(ArrayList<String> finalQueryTerms,boolean isDesc) {
         //refresh for next qi
         currTermDocAndSynonymsCount.clear();
         currTermDocAndSynonymsCount = new HashMap<>();
         int docNum = 0;
         for (String qi :finalQueryTerms){
-            System.out.println(qi);
             docNum += getDocsNum(qi);
         }
-
         //foreach doc update doc length and entities
-
         updateDocLengthEntitiesAndCities();
-        System.out.println( "docNum: "+docNum+ " totalDocs: "+ totalDocs);
         //calculate idf for qwery term
         double idf = Math.log10((totalDocs - docNum + 0.5)/(docNum +0.5));
         //foreach doc that related to one qwery term (qi and it's synonyms) update it rank.
         for (String docId : currTermDocAndSynonymsCount.keySet()){
             int docLength = withRank.get(docId).docLength;
             int freqTermInDoc = currTermDocAndSynonymsCount.get(docId);
-            double rank = (freqTermInDoc*(2+1))/(freqTermInDoc+2*((1-0.75)+0.75*(docLength/avgDocLength)));
+            double rank = (freqTermInDoc*(1.25+1))/(freqTermInDoc+1.25*((1-0.75)+0.75*(docLength/avgDocLength)));
             rank *= idf;
+            if(isDesc)
+                rank=rank*0.5;
             if(titlesInDocs.containsKey(docId)){
                 ArrayList<String> titlesTerms = titlesInDocs.get(docId);
                 for( String sym : queryTerms){

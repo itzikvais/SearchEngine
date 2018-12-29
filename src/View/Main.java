@@ -68,7 +68,7 @@ public class Main extends Application {
         model.addObserver(view);
         model.setController(view);
         SetStageCloseEvent(primaryStage);
-        primaryStage.show();
+        view.endIndexer();
     }
     private void configuringDirectoryChooser(DirectoryChooser directoryChooser) {
         // Set title for DirectoryChooser

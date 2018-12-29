@@ -18,6 +18,7 @@ public class Searcher {
     private String postingPath;
     private boolean toStem;
     private  PrintWriter resultFilePW;
+    private Ranker ranker;
     public Searcher(ArrayList<String> citys, String queries, boolean isFile, boolean useSemantic,boolean toStem,String postingPath,String resultPath ) {
         this.citys = citys;
         this.queries = queries;
@@ -116,6 +117,9 @@ public class Searcher {
         String line=null;
         try {
             int queryNum=0;
+            boolean desc=false;
+            boolean discuss=false;
+            String description="";
             while ((line = br.readLine()) != null){
                 String[] splited=line.split( " " );
                 if(splited.length>=1&&splited[0].equals( "<num>" )) {
@@ -135,11 +139,45 @@ public class Searcher {
                     Parse parse=new Parse( true,toStem );
                     ArrayList<String> termsToRanker=parse.parseForSearcher( query );
                     termsToRanker=changeToUpperOrLower( termsToRanker );
-                    Ranker ranker=new Ranker( termsToRanker, postingPath,citys,useSemantic,toStem );
-                    ranker.rank(  );
+                    ranker=new Ranker( termsToRanker, postingPath,citys,useSemantic,toStem );
+                }
+                if(desc) {
+                    if (!discuss) {
+                        for (int i = 0; i < splited.length; i++) {
+                            if(discuss)
+                                description+= " " + splited[i];
+                            if (splited[i].equals("discuss"))
+                                discuss = true;
+                        }
+                    }
+                    else {
+                        for (int i = 0; i <splited.length ; i++) {
+                            if(splited[i].charAt(splited[i].length()-1)=='.') {
+                                description+= " "+splited[i].substring(0,splited[i].length()-1).trim();
+                                Parse parse=new Parse(true,toStem);
+                                ArrayList<String> descriptionParsed=parse.parseForSearcher(description);
+                                descriptionParsed=changeToUpperOrLower(descriptionParsed);
+                                ranker.setDescriptionTerms(descriptionParsed);
+                                description="";
+                                discuss = false;
+                                desc=false;
+                            }
+                            else{
+                                description+=" " +splited[i];
+                            }
+                        }
+                    }
+                }
+                if(splited.length>1&&splited[0].equals("<desc>" )){
+                    desc=true;
+                }
+                if(splited.length>1&&splited[0].equals("<narr>" )){
+                    desc=false;
+                }
+                if(line.contains("</top>" )){
+                    ranker.rank();
                     ArrayList<DocForSearcher> rankedDocs=ranker.getDocsWithRank();
-                    //fill with data
-                    writeToFile(queryNum,0,rankedDocs);
+                    writeToFile(queryNum, 0,rankedDocs);
                 }
             }
         }
