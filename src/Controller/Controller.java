@@ -41,6 +41,7 @@ public class Controller implements Observer {
     public boolean start;
     public boolean reset;
     private Group docsGroup=null;
+    ArrayList<DocForSearcher> currentDocsRetrived=null;
     private Group group;
     public int uniqueTerms;
     public int numOfDocs;
@@ -219,14 +220,14 @@ public class Controller implements Observer {
      */
     public void endIndexer() {
         postingPath = txtfld_path.getText();
-        btn_start.setDisable(false);
-        btn_reset.setDisable(false);
-        btn_shDic.setDisable(false);
-        btn_loadDic.setDisable(false);
         createLanguageAndCitiesDropDawn();
         Alert result = new Alert(Alert.AlertType.INFORMATION);
         showQuerySearch();
         if (start){
+            btn_start.setDisable(false);
+            btn_reset.setDisable(false);
+            btn_shDic.setDisable(false);
+            btn_loadDic.setDisable(false);
             start=false;
             time = System.nanoTime() * Math.pow(10, -9) - time;
             time = time / 60;
@@ -303,20 +304,27 @@ public class Controller implements Observer {
      * search a couple of queries from a file
      */
     private void searchQueryFile() {
-        postingPath=txtfld_path.getText();
-        ArrayList<String> cities= new ArrayList<>(  );
-        addChoosedCities(cities);
+        if(txtfld_path.getText()==null||txtfld_path.getText().length()<1){
+            Alert alert= new Alert(Alert.AlertType.WARNING);
+            alert.setContentText("you must choose posting path!");
+            alert.showAndWait();
+            return;
+        }
         if(queryResult.getText()==null||queryResult.getText().length()<1){
             Alert alert= new Alert(Alert.AlertType.WARNING);
             alert.setContentText("you must choose query result destination");
+            alert.showAndWait();
             return;
         }
-        if(queryFilePlace.getText().length()<1){
+        if(queryFilePlace.getText()==null||queryFilePlace.getText().length()<1){
             Alert queryWarning=new Alert( Alert.AlertType.WARNING );
             queryWarning.setContentText( "please Insert a query" );
             queryWarning.showAndWait();
             return;
         }
+        postingPath=txtfld_path.getText();
+        ArrayList<String> cities= new ArrayList<>(  );
+        addChoosedCities(cities);
         myModel.searchFileQuery(queryFilePlace.getText(),cities,postingPath,queryResult.getText(),stemmer.isSelected(),useSemantic.isSelected());
     }
 
@@ -349,12 +357,16 @@ public class Controller implements Observer {
 
     // search a single query
     private void SearchQuery() {
-        postingPath=txtfld_path.getText();
-        ArrayList<String> cities= new ArrayList<>(  );
-        addChoosedCities(cities);
+        if(txtfld_path.getText()==null||txtfld_path.getText().length()<1){
+            Alert alert= new Alert(Alert.AlertType.WARNING);
+            alert.setContentText("you must choose posting path!");
+            alert.showAndWait();
+            return;
+        }
         if(queryResult.getText()==null||queryResult.getText().length()<1){
             Alert alert= new Alert(Alert.AlertType.WARNING);
             alert.setContentText("you must choose query result destination");
+            alert.showAndWait();
             return;
         }
         if(queryPlace.getText().length()<1){
@@ -363,6 +375,9 @@ public class Controller implements Observer {
             queryWarning.showAndWait();
             return;
         }
+        postingPath=txtfld_path.getText();
+        ArrayList<String> cities= new ArrayList<>(  );
+        addChoosedCities(cities);
         String query= queryPlace.getText();
         ArrayList<DocForSearcher> docs=myModel.searchSingleQuery(query,cities,postingPath,queryResult.getText(),stemmer.isSelected(),useSemantic.isSelected());
         try {
@@ -376,6 +391,13 @@ public class Controller implements Observer {
                     showAllDocs(doc);
                 }
             }
+            Button close=new Button("Exit");
+            close.setOnAction(e->closeButtonAction(close));
+            if(docsGroup!=null)
+                docsGroup=new Group(docsGroup,close);
+            else
+                docsGroup=new Group(close);
+            currentDocsRetrived=docs;
             ScrollPane sp = new ScrollPane();
             sp.setContent(docsGroup);
             sp.setPannable(true);
@@ -418,10 +440,9 @@ public class Controller implements Observer {
      * @param docs
      */
     private void showAllDocs(DocForSearcher docs) {
-        System.out.println("document ID"+docs.getDocID() + ", document rank: " +docs.rank);
         Label parameters=new Label( "document ID"+docs.getDocID() + ", document rank: " +docs.rank);
         Button entities = new Button("show entities");
-        entities.setOnAction( e->showEntities() );
+        entities.setOnAction( e->showEntities(docs) );
         HBox hb= new HBox(  );
         hb.setSpacing( 10 );
         hb.setMargin( parameters, new Insets(20, 20, 20, 20) );
@@ -440,7 +461,34 @@ public class Controller implements Observer {
         docsGroup.getStylesheets().add("/View/MyStyle.css");
     }
 
-    private void showEntities() {
+    /**
+     * show a document entities
+     * @param docs
+     */
+    private void showEntities(DocForSearcher docs) {
+        String entities="";
+        if(docs.entities.size()==1){
+            String[] entitiesString=docs.entities.get(0).split(",");
+            for (int i = 0; i <entitiesString.length ; i++) {
+                entities += i+1 + ". " + entitiesString[i].split("@")[0] + "\n";
+            }
+        }
+        else {
+            for (int i = 0; i < docs.entities.size(); i++) {
+                int place = i + 1;
+                System.out.println(docs.entities.get(i));
+                entities += place + ". " + docs.entities.get(i) + "\n";
+            }
+        }
+        Alert result= new Alert(Alert.AlertType.INFORMATION);
+        if(!entities.equals("")){
+            result.setContentText(entities);
+        }
+        else{
+            result.setContentText("doc doesnt have entities");
+        }
+        result.setHeaderText("Entities");
+        result.showAndWait();
     }
 
     /**
@@ -529,9 +577,11 @@ public class Controller implements Observer {
             myModel.loadDictionary(false);
     }
 
-    public void closeButtonAction(ActionEvent actionEvent) {
-        Stage stage = (Stage) closeButton.getScene().getWindow();
+    public void closeButtonAction(Button close) {
+        Stage stage = (Stage) close.getScene().getWindow();
         stage.close();
+        height=50;
+        docsGroup=null;
     }
 
     public void setModel(Model model) {
