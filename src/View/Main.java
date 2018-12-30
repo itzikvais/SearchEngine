@@ -3,7 +3,6 @@ import Controller.Controller;
 import Model.Model;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-
 import javafx.application.Application;
 import javafx.scene.layout.VBox;
 import javafx.event.EventHandler;
@@ -39,7 +38,7 @@ public class Main extends Application {
         //createDB();
         //Creating an image
         String current = new java.io.File( "." ).getCanonicalPath();
-        Image image = new Image(new FileInputStream(current+"/HideAndSeek.jpg"));
+        Image image = new Image(new FileInputStream(current+"/src/View/HideAndSeek.jpg"));
         //Setting the image view
         ImageView imageView = new ImageView(image);
         //Setting the position of the image
@@ -47,7 +46,7 @@ public class Main extends Application {
         imageView.setY(50);
         //setting the fit height and width of the image view
         imageView.setFitHeight(1500);
-        imageView.setFitWidth(700);
+        imageView.setFitWidth(900);
         //Setting the preserve ratio of the image view
         imageView.setPreserveRatio(true);
         this.primaryStage = primaryStage;
@@ -56,7 +55,7 @@ public class Main extends Application {
         FXMLLoader fxmlLoader = new FXMLLoader();
         Parent root = fxmlLoader.load(getClass().getResource("View.fxml").openStream());
         Group group = new Group(imageView,root);
-        Scene scene = new Scene(group, 800, 700);
+        Scene scene = new Scene(group, 1000, 800);
         scene.getStylesheets().add("/View/MyStyle.css");
         primaryStage.setScene(scene);
         primaryStage.setTitle("HideAndSeek");
@@ -69,9 +68,8 @@ public class Main extends Application {
         model.addObserver(view);
         model.setController(view);
         SetStageCloseEvent(primaryStage);
-        primaryStage.show();
+        view.endIndexer();
     }
-
     private void configuringDirectoryChooser(DirectoryChooser directoryChooser) {
         // Set title for DirectoryChooser
         directoryChooser.setTitle("Select corpus directory");

@@ -5,6 +5,8 @@ public class ParsePercent implements IParse{
     public ParsePercent(String number){
         if(Double.parseDouble( number )<0)
             this.number="0";
+        else if(number.contains( "." ))
+            this.number=String.format("%.2f", Double.parseDouble(number));
         else
             this.number=number;
     }

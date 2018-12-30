@@ -24,7 +24,19 @@ public class Parse {
     private static final Pattern UNWANTED_SYMBOLS = Pattern.compile("(?:|[\\[\\]{}()+/\\\\])");
     private boolean toStem;
     private int termPlace;
-
+    private boolean isSearcher=false;
+    private ArrayList<String> termsForSearcher;
+    /**
+     * a constructor for a sercher
+     */
+    public Parse(boolean isSearcher,boolean toStem){
+        this.isSearcher=isSearcher;
+        termsForSearcher=new ArrayList<>(  );
+        this.toStem=toStem;
+        doc=new Document( null,null,0,0 );
+        numOfPArse++;
+        stem=new Stemmer();
+    }
     /**
      *
      * @param toStem using stem or not
@@ -45,12 +57,17 @@ public class Parse {
     public void setDocsBuffer(ArrayList<String[]> docsBuffer) {
         this.docsBuffer.addAll( docsBuffer );
     }
-
+    public ArrayList<String> parseForSearcher(String query){
+        if(query==null)
+            return null;
+        parseLine( query.split( " " ) );
+        clearParser();
+        return termsForSearcher;
+    }
     /**
      *
      * @return an HashSet of parsed documents
      */
-
     public HashSet<Document> parse(){
         for (int i = 0; i < docsBuffer.size(); i++) {
             String[] docProp=docsBuffer.get(i);
@@ -65,8 +82,8 @@ public class Parse {
             for (int j = 0; j <lines.length ; j++) {//parse any line in the doc
                 parseLine( lines[j].split("\\s+") );
             }
-
             mergeTerms();
+            doc.sort();
             docsToIndexer.add( doc );
             doc=null;
         }
@@ -93,6 +110,12 @@ public class Parse {
                     Term Nterm = new Term( lowTerm, t.isTitle );
                     if (doc.docTermsAndCount.containsKey( Nterm )) {
                         int val = doc.docTermsAndCount.get( Nterm ) + doc.docTermsAndCount.get( t );
+                        for(Term lt:doc.docTermsAndCount.keySet()){
+                            if(lt.equals( Nterm )){
+                                Nterm.isTitle=Nterm.isTitle||lt.isTitle;
+                                break;
+                            }
+                        }
                         docTerms.put( Nterm, val );
                     }
                     else {
@@ -102,11 +125,13 @@ public class Parse {
                     }
 
                 }
-                else
+                else if(!docTerms.containsKey( t ))
                     docTerms.put( t,doc.docTermsAndCount.get( t ) );
             }
         }
-        doc.docTermsAndCount=docTerms;
+
+        doc.setDocTermsAndCount( docTerms );
+
     }
 
     /**
@@ -128,6 +153,8 @@ public class Parse {
     private void parseLine(String[] line) {
         boolean title=false;
         boolean parse=false;
+        if(isSearcher)
+            parse=true;
         for (int i = 0; i <line.length ; i++) {
             if (i+1<line.length&&line[i].equals( "!F@" )&&!line[i+1].equals( "!/T@" )) {
                 line[i+1]=line[i+1].replaceAll( "[\\p{Punct}]+","" );
@@ -168,8 +195,12 @@ public class Parse {
                 doc.setDate(date);
             }
             if (parse) {
-                line[i]=line[i].replaceAll("[\\p{Punct}&&[^-.]]+", "--"  );
+                line[i]=line[i].replaceAll("[\\p{Punct}&&[^-.,%$/]]+", "--"  );
+                if(line[i].contains( "/" )&&(line[i].split( "/" ).length!=2||!isInteger( line[i].split( "/" )[0])||isInteger( line[i].split( "/" )[1] )))
+                    line[i]=line[i].replaceAll( "/","--" );
                 String punctuations = ".,:;/";
+                if(line[i]!=null&&line[i].contains( "," )&&!isNumeric( line[i].replaceAll( ",","" ) ))
+                    line[i].replaceAll( ",","--" );
                 while(line[i].length()>=1&&punctuations.contains( ""+line[i].charAt( 0 ) ))
                     line[i]=line[i].substring( 1 );
                 if(line[i].length()>=1&&line[i].charAt( line[i].length()-1 )=='.')
@@ -191,7 +222,7 @@ public class Parse {
                     }
                 }
                 else if (!stopWords.contains( line[i] ))
-                    if ((i < line.length - 4 && line[i + 3].equals( "dollars" )) && line[i + 2].equals( "US" ) || (i < line.length - 3 && line[i + 2].equals( "Dollars" ))) {
+                    if ((i < line.length - 4 && line[i + 3].equals( "dollars" )) && line[i + 2].contains( "US" )&&isNumeric( line[i] ) || (i < line.length - 3 && line[i + 2].equals( "Dollars" )&&isNumeric( line[i] )&&(line[i+1].equals( "bn" )||line[i+1].equals( "m" )))) {
                         parsePrice( line[i], line[i + 1], title );
                         if (line[i + 2].equals( "Dollars" ))
                             i = i + 2;
@@ -206,10 +237,11 @@ public class Parse {
                         range[3]=line[i+3];
                         ParseRange pr=new ParseRange( range );
                         String[] parsed=pr.parse();
-                        for (int j = 0; j <parsed.length ; j++) {
-                            addTerm( parsed[j],title );
+                        if(parsed.length>=1)
+                            addTerm(parsed[0],title);
+                        for (int j = 1; j <parsed.length ; j++) {
+                            parseTerm(parsed[j],null,title,i);
                         }
-
                     }
                     else if (i < line.length - 1)
                         i= parseTerm( line[i], line[i + 1], title,i );
@@ -223,7 +255,9 @@ public class Parse {
 
 
     private void parsePrice(String number, String amount,boolean title) {
-        if(isNumeric( number.replace( ",","" ).replace( "$","" ) ) && (amount.contains( "/" )||
+        if(amount==null)
+            amount="";
+        if(amount!=null&&isNumeric( number.replace( ",","" ).replace( "$","" ) ) &&(amount.contains( "/" )||
                 amount.equals( "m" )) || amount.equals( "bn" ) || amount.equals( "million" ) || amount.equals( "billion" ) || amount.equals( "trillion" )) {
             ParsePrice pp = new ParsePrice( number, amount );
             try {
@@ -234,6 +268,17 @@ public class Parse {
                 e.printStackTrace();
             }
         }
+        else if(isNumeric( number.replace( ",","" ).replace( "$","" )  )){
+            ParsePrice pp = new ParsePrice( number, null );
+            try {
+                String term=pp.parse();
+                addTerm( term ,title);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
 
     }
 
@@ -262,28 +307,79 @@ public class Parse {
      */
     private int parseTerm(String term,String nextTerm,boolean title,int i) {
         String parseTerm="";
-        if(term.length()>=1&&!isNumeric(term))
+        if(nextTerm!=null&&nextTerm.contains( "-" ))
+            nextTerm=null;
+        term=term.trim();
+        if(term.contains( "," ))
+            term=term.replaceAll( ",","" );
+        if(term.length()>=1&&!isNumeric(term)&&!term.contains( "%" ))
             term=clearTerm(term);
-        if(nextTerm!=null&&!isNumeric(nextTerm))
+        if(isNumeric( term )&&nextTerm!=null&&nextTerm.contains( "/" )&&nextTerm.split( "/" ).length==2&&isNumeric( nextTerm.split( "/" )[0])&&isNumeric( nextTerm.split( "/" )[1] ) ){
+            if(term.equals( "0" ))
+                addTerm( nextTerm,title );
+            else
+                addTerm( term+" "+nextTerm,title );
+            return i+1;
+        }
+        if(term!=null&&!isNumeric( term )&&term.contains( "." )) {
+            String[] splited=term.split( "." );
+            for (int j = 0; j <splited.length ; j++) {
+                parseTerm(splited[i],null,title,i);
+            }
+            return i;
+        }
+        term=term.replaceAll( "/","" );
+        if(nextTerm!=null&&!isNumeric(nextTerm)&&!nextTerm.contains( "%" ))
             nextTerm=clearTerm(nextTerm);
         if(term!=null&&term.length()>=3&&isNumeric(term)&&term.contains("."))
-            term=String.format("%.3f", Double.parseDouble(term));
+            term=String.format("%.2f", Double.parseDouble(term));
         if(nextTerm!=null&&nextTerm.length()>=3&&isNumeric(nextTerm)&&nextTerm.contains("."))
-            nextTerm=String.format("%.3f", Double.parseDouble(nextTerm));
-        if(term.length()<=0)
+            nextTerm=String.format("%.2f", Double.parseDouble(nextTerm));
+        while(term.length()>=1&&((term.charAt( 0 )=='%'&&!isNumeric( term.substring( 1 ) ))||term.charAt( 0 )=='.'))
+            term=term.substring( 1 );
+        if(term.length()>=1&&term.charAt( 0 )=='%'&&isNumeric( term.substring( 1 ) ))
+            term=term.substring( 1 ) +"%";
+        if(term.length()<=1)
             return i;
+        if(term.contains( "%" )&&term.split( "%" ).length>=2){
+            String[] splited=term.split( "%" );
+            splited[0]+="%";
+            for (int j = 0; j < splited.length; j++) {
+                parseTerm(splited[j],null,title,i);
+            }
+            return i;
+        }
         if(term.equals( doc.getCityOfOrigin() ))
             doc.setNewCityLocation( termPlace );
-        if(term.contains( "-" )){
+        if(term.contains( "$" )&&term.contains( "-" )){
+            if(term.split( "-" ).length>=2&&isNumeric( term.split( "-" )[0].replace( "$","" ) )&&isNumeric( term.split( "-" )[1].replace( "$","" ) )){
+                parsePrice( term.split( "-" )[0], nextTerm, title );
+                parsePrice( term.split( "-" )[1], nextTerm, title );
+                if((nextTerm!=null && (nextTerm.equals( "billion" )||nextTerm.equals( "million" )||nextTerm.equals( "trillion" ))))
+                    return i+1;
+            }
+            else if(term.split( "-" ).length>=2&&isNumeric( term.split( "-" )[0].replace( "$","" ) )&&(term.split( "-" )[1].equals( "million" )||term.split( "-" )[1].equals( "trilliom" )||term.split( "-" )[1].equals( "billion" )||term.split( "-" )[1].equals( "Million" )||term.split( "-" )[1].equals( "Trilliom" )||term.split( "-" )[1].equals( "Billion" )))
+                parsePrice(term.split( "-" )[0], term.split( "-" )[1].toLowerCase(), title);
+            else if(term.split( "-" ).length>=2&&isNumeric( term.split( "-" )[0].replace( "$","" ))&&term.split( "-" )[1].equals( "a" ))
+                parsePrice(term.split( "-" )[0],null,title);
+            else if((term.split( "-" ).length>=1&&isNumeric( term.split( "-" )[0].replace( "$","" ))))
+                parsePrice(term.split( "-" )[0],null,title);
+
+        }
+        else if(term.contains( "-" )){
             parseRange(term,title);
         }
-        else if((term.charAt( term.length()-1 )=='%'&&isNumeric( term.substring( 0,term.length()-1 ) )) || (nextTerm!=null &&isNumeric (term)&&(nextTerm.equals( "percent" ) || nextTerm.equals( "percentage" )))) {
+        else if((term.contains( "%")&&isNumeric( term.substring( 0,term.length()-1 ) )) || (nextTerm!=null &&isNumeric (term)&&(nextTerm.equals( "percent" ) || nextTerm.equals( "percentage" )))) {
             parsePercent( term,title );
             if((nextTerm!=null && (nextTerm.equals( "percent" ) || nextTerm.equals( "percentage" ))))
                 return i+1;
         }
-        else if(monthList.containsKey( term )&&isInteger( nextTerm ) || (nextTerm!=null&&monthList.containsKey( nextTerm )&& isInteger( term )) ) {
+        else if(monthList.containsKey( term )&&isInteger( nextTerm ) || (nextTerm!=null&&nextTerm.length()>1&&monthList.containsKey( nextTerm )&& isInteger( term )) ) {
             parseDate( term, nextTerm, title );
+            return i+1;
+        }
+        else if(isNumeric( term )&&nextTerm!=null&&nextTerm.equals( "Dollars" )){
+            parsePrice( term,null,title );
             return i+1;
         }
         else if(isNumeric( term )&&(nextTerm!=null&&(nextTerm.equals( "m" )||nextTerm.equals( "mile" )||nextTerm.equals( "km" )||nextTerm.equals( "kilometers" )||nextTerm.equals( "meters" )))){
@@ -300,13 +396,16 @@ public class Parse {
                 return i+1;
             return i;
         }
-        else if(term.contains( "$" )|| (nextTerm!=null && nextTerm.equals( "Dollars" ))) {
+        else if(term.contains( "$" )) {
+            if(term.replace( "$","" ).length()==0)
+                return i;
             parsePrice( term, nextTerm, title );
-            if((nextTerm!=null && nextTerm.equals( "Dollars" )))
+            if((nextTerm!=null && (nextTerm.equals( "billion" )||nextTerm.equals( "million" )||nextTerm.equals( "trillion" ))))
                 return i+1;
         }
-        else
-            addTerm( term,title );
+        else {
+            addTerm( term, title );
+        }
         return i;
     }
 
@@ -314,12 +413,12 @@ public class Parse {
         int i=0;
         int j=0;
         for(i=0;i<term.length();i++){
-            if((term.charAt(i)>='A'&&term.charAt(i)<='Z')||(term.charAt(i)>='a'&&term.charAt(i)<='z')){
+            if((term.charAt(i)>='A'&&term.charAt(i)<='Z')||(term.charAt(i)>='a'&&term.charAt(i)<='z')||(term.charAt( i )=='$')){
                 break;
             }
         }
         for(j=i;j<term.length();j++){
-            if(!(term.charAt(j)>='A'&&term.charAt(j)<='Z')&&!(term.charAt(j)>='a'&&term.charAt(j)<='z')&&!(term.charAt(j)=='-')){
+            if(!(term.charAt(j)>='A'&&term.charAt(j)<='Z')&&!(term.charAt(j)>='a'&&term.charAt(j)<='z')&&!(term.charAt( i )=='$')&&!(term.charAt(j)=='-')){
                 break;
             }
         }
@@ -347,15 +446,17 @@ public class Parse {
             ParseRange pr = new ParseRange( term.split( "-" ) );
             String[] parse = pr.parse();
             if(parse!=null) {
-                for (int i = 0; i < parse.length; i++) {
-                    addTerm( parse[i], title );
+                if(parse.length>=1)
+                    addTerm(parse[0],title);
+                for (int i = 1; i < parse.length; i++) {
+                    parseTerm( parse[i],null, title,i );
                 }
             }
         }
     }
 
     private void parsePercent(String term,boolean title) {
-        ParsePercent pp=new ParsePercent( term );
+        ParsePercent pp=new ParsePercent( term.replace( "%","" ) );
         try {
             String newTerm= pp.parse();
             addTerm( newTerm,title );
@@ -413,19 +514,28 @@ public class Parse {
         return true;
     }
     private void addTerm(String term,boolean title){
+        if(term!=null&&term.contains( "%" )&&term.charAt( 0 )=='.')
+            term=term.substring( 1 );
         if(term!=null&&term.length()>=1&&term.charAt(0)=='-')
             term=term.substring(1);
         if(term==null||term.length()<1)
             return;
-        termPlace++;
-        if(toStem){
-            stem.add(term.toCharArray(),term.length());
-            stem.stem();
-            term=stem.toString();
-        }
-        if(term!=null&&term.length()>0) {
-            Term t = new Term( term, title );
-            doc.addTerm( t );
+        else {
+            termPlace++;
+            if (toStem) {
+                stem.add( term.toCharArray(), term.length() );
+                stem.stem();
+                term = stem.toString();
+
+            }
+            if (term != null && term.length() > 0) {
+                Term t = new Term( term, title );
+                if(isSearcher){
+                    termsForSearcher.add( term );
+                }
+                else
+                    doc.addTerm( t );
+            }
         }
     }
 

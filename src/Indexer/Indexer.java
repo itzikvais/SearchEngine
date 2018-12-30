@@ -12,20 +12,18 @@ public class Indexer {
     private HashMap<String,DicEntry> dictionary;
     private HashMap<String,StringBuilder> cities;
     private HashSet<String> languages ;
+    private HashSet<String> entities;
 
     private String postingDirPath;
     private String finalPostingFilePath;
 
     public static int totalDocsNum;
-    public static int totalUniqueTerms;
-    public static int capitalCitiesNum;
-    public static int notCapitalCitiesNum;
-    public static int allCitiesNum;
-    public static int numberTerms;
-    public static int countriesNum;
-    public static String mostTimeCitiesDocID;
-    public static String mostTimeCitiesDocIDCityAndPositions;
-    public static int mostTimeCitiesDocIDVal;
+    public int totalUniqueTerms;
+    public int capitalCitiesNum;
+    public int notCapitalCitiesNum;
+    public int allCitiesNum;
+    public int numberTerms;
+    public int countriesNum;
 
 
     private int chunksCounter;
@@ -38,13 +36,15 @@ public class Indexer {
         this.docsFromParser = new HashSet<>();
         this.dictionary = new HashMap<>();
         this.languages = new HashSet<>();
+        this.entities = new HashSet<>();
         this.chunksCounter = 0;
     }
-    public void delete() {
+    public void clear() {
         docsFromParser.clear();
         dictionary.clear();
         cities.clear();
         languages.clear();
+        entities.clear();
     }
 
     /* getters and setters */
@@ -54,9 +54,12 @@ public class Indexer {
     public void setDocsFromParser(HashSet<Document> docsFromParser) {
         this.docsFromParser = docsFromParser;
     }
+    public String getPostingDirPath() {
+        return postingDirPath;
+    }
 
     /* index the chunk - the main function of the class */
-    public void indexChunk(PrintWriter documentsFilePW) throws FileNotFoundException {
+    public void indexChunk(PrintWriter documentsFilePW,PrintWriter entitiesFilePW) throws FileNotFoundException {
         //open documentsFilePW
 
         //create curr doc's terms
@@ -86,19 +89,14 @@ public class Indexer {
                 }
                 if (sb.length() != 0) sb.append(";");
                 sb.append(d.getDocID());
+                if (isTitle) sb.append("*");
                 sb.append(":");
                 sb.append(count);
-                if (isTitle) sb.append(",T");
-                // DocID:TF,T;DocID:TF,T;DocID:TF,T...
+                // DocID*:TF;DocID:TF;DocID*:TF...
             }
-            if (d.getNumOfCityLocations() > mostTimeCitiesDocIDVal){
-                mostTimeCitiesDocID = d.getDocID();
-                mostTimeCitiesDocIDVal = d.getNumOfCityLocations();
-                mostTimeCitiesDocIDCityAndPositions = d.getCityOfOrigin()+ " and positions: " + d.getPositions();
-            }
-            //if (d.getDocID().equals("FBIS3-3366")) d.printTermAndCount();
             updateCityDic(d);
             updateDocFile(d, documentsFilePW);
+            updateEntitiesFile(d,entitiesFilePW);
             updateLanguages(d.getLanguage());
 
             d.docTermsAndCount.clear();
@@ -191,6 +189,22 @@ public class Indexer {
     }
     private void updateLanguages(String language){
         languages.add(language);
+    }
+    private void updateEntitiesFile(Document d,PrintWriter entitiesFilePW){
+        StringBuilder sb = new StringBuilder();
+        sb.append(d.getDocID());sb.append("#");
+        sb.append(d.getDocLength());sb.append("#");
+
+        ArrayList<String> docEntities = d.getEntities();
+        for (String entity : docEntities){
+            sb.append(entity);
+            sb.append("@");
+            sb.append(d.docTermsAndCount.get(new Term(entity,false)));
+            sb.append(",");
+        }
+        sb.deleteCharAt(sb.length()-1);
+        entitiesFilePW.println(sb.toString());
+        //docID#DocLength#entity,entity,entity,entity,entity...
     }
     private void createTempPostingFile(TreeMap<String, StringBuilder> currChunkTerms) throws FileNotFoundException {
         //create a temp-posting-text-file from all the docs in current chunk
@@ -302,8 +316,10 @@ public class Indexer {
 
             startDeleting(postingDirPath +"\\"+"temp");
             new File(postingDirPath +"\\"+"temp").delete();
+
         } catch(Exception e){e.printStackTrace();}
     }
+
     /* helper functions for MergeSort */
     private void startDeleting(String path) {
         List<String> filesList = new ArrayList<String>();
@@ -333,7 +349,6 @@ public class Indexer {
         }
 
     }
-
     public HashSet<String> getLanguages() {
         return languages;
     }
@@ -352,6 +367,9 @@ public class Indexer {
         }
 
         for(String term : termsSet) {
+            //update entities
+            if(term.charAt(0)>='A' && term.charAt(0) <= 'Z')
+                entities.add(term);
             totalUniqueTerms++;
             DicEntry de = dictionary.get(term);
             StringBuilder sb = new StringBuilder();
@@ -361,31 +379,6 @@ public class Indexer {
             sb.append(de.idf); sb.append(",");
             sb.append(de.postingLine);
             // term#sumTf,df,idf,postingLine
-            pw.println(sb.toString());
-        }
-
-        pw.flush();
-        pw.close();
-
-    }
-    public void createDictionaryForReport() throws FileNotFoundException {
-        SortedSet<String> termsSet = new TreeSet<>(dictionary.keySet());
-        String dicFilePath = postingDirPath +"\\" + "dictionaryForReport" + ".txt";
-        File dictionaryFile = new File(dicFilePath);
-        if (dictionaryFile .exists()) dictionaryFile .delete();
-
-        PrintWriter pw = new PrintWriter(new FileOutputStream(dictionaryFile ,true));
-        if (pw==null){
-            System.out.println("Posting folder not found!! - Cannot create dictionary");
-            return;
-        }
-
-        for(String term : termsSet) {
-            DicEntry de = dictionary.get(term);
-            StringBuilder sb = new StringBuilder();
-            sb.append(term); sb.append(":");
-            sb.append(de.sumTF);
-            // term:sumTf
             pw.println(sb.toString());
         }
 
@@ -416,11 +409,25 @@ public class Indexer {
         }
     }
 
-    public void createCityFile() throws FileNotFoundException {
+    /* cities functions */
+    public HashSet<String> getCities(){
+        HashSet<String> toReturn=new HashSet<String>(  );
+        for(String city:cities.keySet()) {
+            if(city.length()>=2)
+                toReturn.add( city );
+        }
+        return toReturn;
+    }
+    public void createCityFile() {
         File CityFile = new File(postingDirPath +"\\" + "cityFile" + ".txt");
         if (CityFile.exists()) CityFile.delete();
 
-        PrintWriter pw = new PrintWriter(new FileOutputStream(CityFile,true));
+        PrintWriter pw = null;
+        try {
+            pw = new PrintWriter(new FileOutputStream(CityFile,true));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
         if (pw==null){
             System.out.println("Posting folder not found!! - Cannot create cityFile");
             return;
@@ -431,6 +438,7 @@ public class Indexer {
         notCapitalCitiesNum = cities.size();
         capitalCitiesNum = cities.size();
         for(String city : citiesSet) {
+            System.out.println(city);
             StringBuilder toChain = cities.get(city);
             ApiCity apiCity = new ApiCity(city);
             if(apiCity.getCountry() == null) capitalCitiesNum--;
@@ -444,39 +452,72 @@ public class Indexer {
             sb.append(apiCity.getPopulation());sb.append("#");
             sb.append(toChain.toString());
             // city#Country,Currency,Population#docId:123,123,123
+            System.out.println(sb.toString());
             pw.println(sb.toString());
         }
 
         pw.flush();
         pw.close();
     }
-    public void howManyNumbersTerms(){
-        SortedSet<String> termsSet = new TreeSet<>(dictionary.keySet());
-        for (String term : termsSet){
-            if (term.matches("-?\\d+(\\.\\d+)?")) numberTerms++;
+//    public void howManyNumbersTerms(){
+//        SortedSet<String> termsSet = new TreeSet<>(dictionary.keySet());
+//        for (String term : termsSet){
+//            if (term.matches("-?\\d+(\\.\\d+)?")) numberTerms++;
+//        }
+//    }
+
+    /* entities functions */
+    public void createFinalEntitiesFile(PrintWriter entitiesPW){
+        //close and create reader buffer
+        entitiesPW.flush();
+        entitiesPW.close();
+        try {
+            File oldEntitiesFile = new File(postingDirPath + "\\" + "entitiesFile" + ".txt");
+            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(oldEntitiesFile)));
+
+            //create entities final file
+            File finalEntitiesFile = new File(postingDirPath + "\\" + "finalEntitiesFile" + ".txt");
+            if (finalEntitiesFile.exists()) finalEntitiesFile.delete();
+            //create print writer
+            PrintWriter finalEntitiesFilePW = new PrintWriter(new FileOutputStream(finalEntitiesFile, true));
+            if (finalEntitiesFilePW  == null) {
+                System.out.println("Posting folder not found!! - Cannot create entitiesFile");
+            }
+
+            //write to the file
+            String line;
+            while (br != null && (line = br.readLine()) != null) {
+                StringBuilder sb = new StringBuilder();
+                String[] splited = line.split("#");
+                sb.append(splited[0]);sb.append("#");
+                sb.append(splited[1]);sb.append("#");
+                String[] entities;
+                if(splited.length>=3) {
+                    entities = splited[2].split( "," );
+                    int counter = 0;
+                    for (int i = 0; i < entities.length && counter < 5; i++) {
+                        if (this.entities.contains( entities[i].split( "@" )[0] )) {
+                            sb.append( entities[i] );
+                            sb.append( "," );
+                            counter++;
+                        }
+                    }
+                }
+                sb.deleteCharAt(sb.length()-1);
+                finalEntitiesFilePW.println(sb.toString());
+            }
+
+            finalEntitiesFilePW.flush();
+            finalEntitiesFilePW.close();
+            br.close();
+            oldEntitiesFile.delete();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        catch (Exception e){
+            e.printStackTrace();
         }
     }
-
-
-
-
-    /* print data */
-    public static void printData(){
-        System.out.println("Total documents number: "+totalDocsNum);
-        System.out.println("Total unique terms number: "+totalUniqueTerms);
-
-        System.out.println("Num of all Cities: "+allCitiesNum);
-        System.out.println("Num of capital Cities: "+capitalCitiesNum+ ", Num of not capital Cities: "+notCapitalCitiesNum);
-        if (allCitiesNum == capitalCitiesNum + notCapitalCitiesNum) System.out.println("it's OK :)");
-        else System.out.println("it's not OK :( ");
-
-        System.out.println("Num of number-terms: " + numberTerms);
-        System.out.println("Num of cities: " + countriesNum);
-        System.out.println("Most show city docID: " + mostTimeCitiesDocID + "the city is: " +mostTimeCitiesDocIDCityAndPositions  + "the number of shows is: " +mostTimeCitiesDocIDVal );
-
-    }
-
-
 
 
     public String showDictionary() throws IOException {
@@ -494,7 +535,7 @@ public class Indexer {
         StringBuilder sb= new StringBuilder();
         for(String term : termsSet) {
             DicEntry de = dictionary.get(term);
-            if(de.sumTF>3) {
+            if(de.sumTF>=1) {
                 sb.append(term);
                 sb.append(",");
                 sb.append(de.sumTF);
@@ -505,4 +546,141 @@ public class Indexer {
 
         return sb.toString();
     }
+
+    public void splitFinalPostingFile() {
+        //old big posting file
+        File oldPostingFile = new File(finalPostingFilePath);
+        try {
+            //create Buffer reader
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(oldPostingFile)));
+
+            //creating the final divided posting files
+            File postingFiles = new File(postingDirPath + "\\PostingFiles");
+            if(!postingFiles.exists()) {
+                postingFiles.mkdir();
+            }
+            //numbers
+            File numbers = new File(postingDirPath + "\\PostingFiles\\numbers.txt");
+            if (numbers.exists()) numbers.delete();
+            //AG
+            File CAG = new File(postingDirPath + "\\PostingFiles\\CAG.txt");
+            if (CAG.exists()) CAG.delete();
+            //HO
+            File CHO = new File(postingDirPath + "\\PostingFiles\\CHO.txt");
+            if (CHO.exists()) CHO.delete();
+            //PZ
+            File CPZ = new File(postingDirPath + "\\PostingFiles\\CPZ.txt");
+            if (CPZ.exists()) CPZ.delete();
+            //ag
+            File ag = new File(postingDirPath + "\\PostingFiles\\ag.txt");
+            if (ag.exists()) ag.delete();
+            //ho
+            File ho = new File(postingDirPath + "\\PostingFiles\\ho.txt");
+            if (ho.exists()) ho.delete();
+            //pz
+            File pz = new File(postingDirPath + "\\PostingFiles\\pz.txt");
+            if (pz.exists()) pz.delete();
+
+            //create Print writer
+            PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(numbers)));
+
+            //fill files
+            String line = reader.readLine();
+            char firstChar = line.split("#")[0].charAt(0);
+
+            //numbers
+            while (firstChar < 'A'){
+                writer.println(line);
+
+                line = reader.readLine();
+                if (line == null) break;
+                firstChar = line.split("#")[0].charAt(0);
+            }
+            writer.flush();
+            writer.close();
+            writer = new PrintWriter(new BufferedWriter(new FileWriter(CAG)));
+
+            //AG
+            while (firstChar < 'H'){
+                writer.println(line);
+
+                line = reader.readLine();
+                if (line == null) break;
+                firstChar = line.split("#")[0].charAt(0);
+            }
+            writer.flush();
+            writer.close();
+            writer = new PrintWriter(new BufferedWriter(new FileWriter(CHO)));
+
+            //HO
+            while (firstChar < 'P'){
+                writer.println(line);
+
+                line = reader.readLine();
+                if (line == null) break;
+                firstChar = line.split("#")[0].charAt(0);
+            }
+            writer.flush();
+            writer.close();
+            writer = new PrintWriter(new BufferedWriter(new FileWriter(CPZ)));
+
+            //PZ
+            while (firstChar < 'a'){
+                writer.println(line);
+
+                line = reader.readLine();
+                if (line == null) break;
+                firstChar = line.split("#")[0].charAt(0);
+            }
+            writer.flush();
+            writer.close();
+            writer = new PrintWriter(new BufferedWriter(new FileWriter(ag)));
+
+            //ag
+            while (firstChar < 'h'){
+                writer.println(line);
+
+                line = reader.readLine();
+                if (line == null) break;
+                firstChar = line.split("#")[0].charAt(0);
+            }
+            writer.flush();
+            writer.close();
+            writer = new PrintWriter(new BufferedWriter(new FileWriter(ho)));
+
+            //ho
+            while (firstChar < 'p'){
+                writer.println(line);
+
+                line = reader.readLine();
+                if (line == null) break;
+                firstChar = line.split("#")[0].charAt(0);
+            }
+            writer.flush();
+            writer.close();
+            writer = new PrintWriter(new BufferedWriter(new FileWriter(pz)));
+
+            //pz
+            while (firstChar <= 'z'){
+                writer.println(line);
+
+                line = reader.readLine();
+                if (line == null) break;
+                firstChar = line.split("#")[0].charAt(0);
+            }
+            writer.flush();
+            writer.close();
+
+            //delete the old final posting file
+            reader.close();
+            oldPostingFile.delete();
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
 }

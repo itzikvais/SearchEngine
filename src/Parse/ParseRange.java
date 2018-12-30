@@ -52,11 +52,12 @@ public class ParseRange {
                     toReturn[2]=range[3];
                 }
                 else {
-                    toReturn=new String[1];
+                    toReturn=new String[range.length+1];
                     toReturn[0]="";
                     for (int i = 0; i < range.length; i++) {
                         if(range[i].length()>=1)
                             toReturn[0] += range[i] + "-";
+                        toReturn[i+1]=range[i];
                     }
                     toReturn[0]=toReturn[0].substring( 0, toReturn[0].length() - 1 );
                 }
