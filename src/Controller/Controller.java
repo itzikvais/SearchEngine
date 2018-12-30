@@ -9,6 +9,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Orientation;
 import javafx.scene.Group;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
@@ -18,8 +19,8 @@ import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.stage.*;
 import javafx.collections.ObservableList;
-import java.io.File;
-import java.io.IOException;
+
+import java.io.*;
 import java.util.*;
 import javafx.geometry.Insets;
 
@@ -121,22 +122,36 @@ public class Controller implements Observer {
     }
 
     private void addCities() {
-        if(this.cities!=null) {
-            for (String city : this.cities) {
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(System.getProperty("user.dir")+"\\citiesFile"+".txt"))));
+            String city = br.readLine().trim();
+            while(city != null){
                 CheckBox cityCB = new CheckBox(city);
                 CustomMenuItem item = new CustomMenuItem(cityCB);
                 item.setHideOnClick(false);
                 citiesMenu.getItems().add(item);
+                city = br.readLine();
             }
+            br.close();
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
     private void addLanguages(ComboBox<String> language) {
-        if (languages != null){
-            for (String lang : languages) {
-                language.getItems().add(lang);
-            }
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(System.getProperty("user.dir") + "\\languagesFile" + ".txt"))));
 
+            String lang = br.readLine().trim();
+            while (lang != null) {
+                language.getItems().add(lang);
+                lang = br.readLine();
+            }
+            br.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
     public void chooseCorpusFolder(ActionEvent actionEvent){
@@ -350,12 +365,36 @@ public class Controller implements Observer {
         }
         String query= queryPlace.getText();
         ArrayList<DocForSearcher> docs=myModel.searchSingleQuery(query,cities,postingPath,queryResult.getText(),stemmer.isSelected(),useSemantic.isSelected());
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/View/ViewDocuments.fxml"));
         try {
-            root = (Parent) fxmlLoader.load();
-            for(DocForSearcher doc:docs)
-                showAllDocs(doc);
-            Scene scene = new Scene( docsGroup );
+            /*
+            String path="/View/ViewDocuments.fxml";
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource(path));
+            root =(Parent) fxmlLoader.load();
+            */
+            if(docs!=null) {
+                for (DocForSearcher doc : docs) {
+                    showAllDocs(doc);
+                }
+            }
+            ScrollPane sp = new ScrollPane();
+            sp.setContent(docsGroup);
+            sp.setPannable(true);
+            /*
+            ScrollBar sc = new ScrollBar();
+            sc.setMin(0);
+            sc.setLayoutY( 1000 );
+            sc.setLayoutX( 960 );
+            sc.setOrientation(Orientation.VERTICAL);
+            sc.setPrefHeight(750);
+            sc.setMax(750 );
+            sc.valueProperty().addListener(new ChangeListener<Number>() {
+                public void changed(ObservableValue<? extends Number> ov,
+                                    Number old_val, Number new_val) {
+                    docsGroup.setLayoutY(-new_val.doubleValue());
+                }
+            });
+            */
+            Scene scene = new Scene( sp, 700,800 );
             Stage stage = new Stage();
             stage.setScene( scene );
             stage.initModality( Modality.APPLICATION_MODAL);
@@ -369,7 +408,7 @@ public class Controller implements Observer {
             });
             stage.show();
         }
-        catch (IOException e) {
+        catch (Exception e) {
         e.printStackTrace();
         }
     }
@@ -379,25 +418,26 @@ public class Controller implements Observer {
      * @param docs
      */
     private void showAllDocs(DocForSearcher docs) {
+        System.out.println("document ID"+docs.getDocID() + ", document rank: " +docs.rank);
         Label parameters=new Label( "document ID"+docs.getDocID() + ", document rank: " +docs.rank);
         Button entities = new Button("show entities");
         entities.setOnAction( e->showEntities() );
         HBox hb= new HBox(  );
         hb.setSpacing( 10 );
         hb.setMargin( parameters, new Insets(20, 20, 20, 20) );
+        hb.setMargin(entities, new Insets(0, 0, 0, 0));
         hb.setLayoutX( 40 );
         hb.setLayoutY( height );
-        hb.setPrefWidth( 200 );
+        hb.setPrefWidth( 600 );
         ObservableList list = hb.getChildren();
         list.addAll(parameters,entities  );
-        height+=120;
+        height+=60;
         if(docsGroup==null){
-            docsGroup=new Group(root, hb );
-
+            docsGroup=new Group( hb );
         }
         else
-            docsGroup=new Group( group,hb );
-        group.getStylesheets().add("/View/MyStyle.css");
+            docsGroup=new Group( docsGroup,hb );
+        docsGroup.getStylesheets().add("/View/MyStyle.css");
     }
 
     private void showEntities() {

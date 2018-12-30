@@ -65,24 +65,10 @@ public class Model extends Observable implements ModelInt {
 
     @Override
     public ArrayList<DocForSearcher> searchSingleQuery(String query, ArrayList<String> cities, String postingPath,String resultFile, boolean stem, boolean selected) {
-        rf.clear();
+        if(rf!=null)
+            rf.clear();
         Searcher searcher=new Searcher( cities,query,false,selected,stem,postingPath,resultFile );
-        HashMap<String,DocForSearcher> docs=searcher.start();
-        ArrayList<DocForSearcher> toReturn=new ArrayList<>(  );
-        if(docs==null)
-            return null;
-        for(DocForSearcher doc:docs.values()){
-            toReturn.add(doc);
-        }
-        toReturn.sort( new Comparator<DocForSearcher>() {
-            @Override
-            public int compare(DocForSearcher o1, DocForSearcher o2) {
-                if(o1.rank>o2.rank)
-                    return 1;
-                return 0;
-            }
-        } );
-        return toReturn;
+        return searcher.start();
     }
 
     @Override

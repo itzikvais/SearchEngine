@@ -1,6 +1,7 @@
 package Ranker;
 
 import ExternalClasses.DocForSearcher;
+import ExternalClasses.SpellChecker;
 import ExternalClasses.Synonyms;
 
 import java.io.*;
@@ -74,6 +75,10 @@ public class Ranker {
                 String[] symArray;
                 try {
                     symArray = synonyms.searchSynonym(qi);
+                    SpellChecker sc=new SpellChecker();
+                    String spellCheck=sc.checkSpell(qi);
+                    if(spellCheck!=null)
+                        finalQueryTerms.add(spellCheck);
                     ArrayList<String> termSynonyms = null;
                     if (symArray!= null && symArray.length != 0)
                         termSynonyms = new ArrayList<String>(Arrays.asList(symArray));

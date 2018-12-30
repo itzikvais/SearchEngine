@@ -8,25 +8,82 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URLConnection;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
-
+import java.util.Scanner;
 public class SpellChecker {
-    public List<String> splitCrudeAnswer(String crudeAnswer){
-        List<String> words = new ArrayList<>();
-        for (int nextIndex = crudeAnswer.indexOf("{\"word\":\""); nextIndex>0; nextIndex = crudeAnswer.indexOf("{\"word\":\"")){
-            crudeAnswer = crudeAnswer.substring(nextIndex+9);
-            int scoreStartIndex = crudeAnswer.indexOf("\",\"score\":");
-            String word = crudeAnswer.substring(0,scoreStartIndex);
-            if(word.contains(" ")) {
-                word=word.replaceAll(" ","-");
+    private final String USER_AGENT = "Mozilla/5.0";
+
+    public static void main(String[] args) throws Exception {
+        SpellChecker http = new SpellChecker();
+
+        String syns=http.checkSpell("pilloq");
+        System.out.println(syns);
+
+    }
+
+
+
+    public String checkSpell(String wordToSearch) throws Exception {
+        String synWords="";
+        String url = "http://api.datamuse.com/words?sp=" + wordToSearch+ "&max=1";
+
+        URL obj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+        con.setRequestMethod("GET");
+        con.setRequestProperty("User-Agent", USER_AGENT);
+
+        int responseCode = con.getResponseCode();
+
+        // ordering the response
+        StringBuilder response;
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
+            String inputLine;
+            response = new StringBuilder();
+
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
             }
-            words.add(word);
         }
-        return words;
-    }
-    String spelledSimilarMaxResults(String word, int maxResults) {
-        String s = word.replaceAll(" ", "+");
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        try {
+            // converting JSON array to ArrayList of words
+            ArrayList<Word> words = mapper.readValue(
+                    response.toString(),
+                    mapper.getTypeFactory().constructCollectionType(ArrayList.class, Word.class)
+            );
+
+            if(words.size() > 0) {
+                for(Word word : words) {
+                    if(!word.getWord().contains( " " ))
+                        synWords+=word.getWord()+",";
+                }
+            }
+        }
+        catch (IOException e) {
+            e.getMessage();
+        }
+        if(synWords!=null&&synWords.length()>1) {
+            synWords = synWords.substring(0, synWords.length() - 1);
+            if (synWords.equals(wordToSearch))
+                return null;
+            else
+                return synWords;
+        }
         return null;
-        //return getJSON("http://api.datamuse.com/words?sp=" + s + "&max=" + maxResults);
+
     }
+
+    // word and score attributes are from DataMuse API
+    static class Word {
+        private String word;
+        private int score;
+
+        public String getWord() {
+                return this.word;
+        }
+        public int getScore() {return this.score;}
+    }
+
 }

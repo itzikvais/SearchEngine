@@ -1,6 +1,7 @@
 package Searcher;
 
 import ExternalClasses.DocForSearcher;
+import ExternalClasses.SpellChecker;
 import Parse.Parse;
 import Ranker.Ranker;
 
@@ -46,7 +47,7 @@ public class Searcher {
      * start the searcher
      * @return the most 50 relevant docs
      */
-    public HashMap<String, DocForSearcher> start(){
+    public  ArrayList<DocForSearcher> start(){
         Parse parse=new Parse( true,toStem );
         if(!isFile){
             Ranker ranker=null;
@@ -56,6 +57,7 @@ public class Searcher {
             ranker.rank( );
             ArrayList<DocForSearcher> rankedDocs= ranker.getDocsWithRank();
             writeToFile(100,0,rankedDocs);
+            return rankedDocs;
         }
         else{
             BufferedReader br=null;

@@ -143,6 +143,7 @@ public class ReadFile {
         }
         writeDataForRanker();
         HashSet<String>[] cityAndLang;
+        writeCitiesAndLanguages(indexer.getCities(),indexer.getLanguages());
         cityAndLang=new HashSet[2];
         cityAndLang[0]=indexer.getLanguages();
         cityAndLang[1]=indexer.getCities();
@@ -228,7 +229,47 @@ public class ReadFile {
         }
 
     }
+    public void writeCitiesAndLanguages(HashSet<String> cities, HashSet<String> languages){
+        //create citiesFile file
+        File citiesFile = new File(System.getProperty("user.dir")+"\\citiesFile"+".txt");
+        if (citiesFile.exists()) citiesFile.delete();
 
+        PrintWriter citiesFilePW = null;
+        try {
+            citiesFilePW = new PrintWriter(new FileOutputStream(citiesFile, true));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        if (citiesFilePW == null) {
+            System.out.println("citiesFilePW didn't create ");
+        }
+
+        for (String city : cities){
+            citiesFilePW.println(city);
+        }
+        citiesFilePW.flush();
+        citiesFilePW.close();
+
+        //create languagesFile file
+        File languagesFile = new File(System.getProperty("user.dir")+"\\languagesFile"+".txt");
+        if (languagesFile.exists()) languagesFile.delete();
+
+        PrintWriter languagesFilePW = null;
+        try {
+            languagesFilePW = new PrintWriter(new FileOutputStream(languagesFile, true));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        if (languagesFilePW == null) {
+            System.out.println("languagesFilePW didn't create ");
+        }
+
+        for (String language : languages){
+            languagesFilePW.println(language);
+        }
+        languagesFilePW.flush();
+        languagesFilePW.close();
+    }
     public void loadDictionary(boolean toStem){
         try {
             String dictionaryFullPath;
