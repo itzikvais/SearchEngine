@@ -1,5 +1,7 @@
 package Parse;
 
+import ExternalClasses.Document;
+
 public class ParseRange {
     private String[] range=null;
     public ParseRange(String[] range){
@@ -11,7 +13,15 @@ public class ParseRange {
         String[] toReturn=null;
         if(range!=null){
             if(isNumeric( range[0] )){
+                if(range[0].contains( "." ))
+                    range[0]= ""+ Double.parseDouble( range[0] );
+                else
+                    range[0]= ""+Integer.parseInt( range[0] );
                 if(range.length>1&&isNumeric( range[1] )){
+                    if(range[1].contains( "." ))
+                        range[1]="" +Double.parseDouble( range[1] );
+                    else
+                        range[1]="" +Integer.parseInt( range[1] );
                     toReturn=new String[3];
                     toReturn[0]=range[0]+"-"+range[1];
                     toReturn[1]=range[0];
@@ -29,6 +39,14 @@ public class ParseRange {
             else{
                 if((range[0].equals( "between" )||range[0].equals( "Between" ))&&range.length==4&&isNumeric( range[1] )&&isNumeric( range[3] )){
                     toReturn=new String[3];
+                    if(range[1].contains( "." ))
+                        range[1]="" +Double.parseDouble( range[1] );
+                    else
+                        range[1]="" +Integer.parseInt( range[1] );
+                    if(range[3].contains( "." ))
+                        range[3]="" +Double.parseDouble( range[3] );
+                    else
+                        range[3]="" +Integer.parseInt( range[3] );
                     toReturn[0]=range[1]+"-"+range[3];
                     toReturn[1]=range[1];
                     toReturn[2]=range[3];
@@ -37,7 +55,8 @@ public class ParseRange {
                     toReturn=new String[1];
                     toReturn[0]="";
                     for (int i = 0; i < range.length; i++) {
-                        toReturn[0] += range[i] + "-";
+                        if(range[i].length()>=1)
+                            toReturn[0] += range[i] + "-";
                     }
                     toReturn[0]=toReturn[0].substring( 0, toReturn[0].length() - 1 );
                 }

@@ -11,10 +11,18 @@ public class ParseNumber implements IParse {
      * @param amount Thousand Million Billion or Trillion
      */
     public ParseNumber(String number, String amount){
+        if(number.contains( "z" )||number.contains( "Z" ))
+            System.out.println("whyyyyyyy");
         this.number=number;
         this.amount=amount;
         if(this.number.contains( "," ))
             this.number=this.number.replace( ",","" );
+        /*
+        if(this.number.contains( "." ))
+            this.number="" +Double.parseDouble( this.number );
+        else
+            this.number="" +Integer.parseInt( this.number );
+            */
         if(number!=null && number.charAt( 0 )=='-'){
             this.number=this.number.substring( 1 );
             negative=true;
