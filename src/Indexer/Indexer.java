@@ -673,7 +673,7 @@ public class Indexer {
 
             //delete the old final posting file
             reader.close();
-            oldPostingFile.delete();
+//            oldPostingFile.delete();
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
