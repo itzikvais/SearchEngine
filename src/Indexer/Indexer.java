@@ -429,7 +429,6 @@ public class Indexer {
             e.printStackTrace();
         }
         if (pw==null){
-            System.out.println("Posting folder not found!! - Cannot create cityFile");
             return;
         }
 
@@ -438,7 +437,8 @@ public class Indexer {
         notCapitalCitiesNum = cities.size();
         capitalCitiesNum = cities.size();
         for(String city : citiesSet) {
-            System.out.println(city);
+            if ((city.charAt(0) >= '0' && city.charAt(0) <= '9') || city.equals("THE") || city.equals("the") || city.equals("by") || city.equals("FOR") || city.equals("new") || city.equals("NEWS"))
+                continue;
             StringBuilder toChain = cities.get(city);
             ApiCity apiCity = new ApiCity(city);
             if(apiCity.getCountry() == null) capitalCitiesNum--;
@@ -452,7 +452,6 @@ public class Indexer {
             sb.append(apiCity.getPopulation());sb.append("#");
             sb.append(toChain.toString());
             // city#Country,Currency,Population#docId:123,123,123
-            System.out.println(sb.toString());
             pw.println(sb.toString());
         }
 
@@ -673,7 +672,7 @@ public class Indexer {
 
             //delete the old final posting file
             reader.close();
-            oldPostingFile.delete();
+//            oldPostingFile.delete();
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
