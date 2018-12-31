@@ -38,7 +38,7 @@ public class Main extends Application {
         //createDB();
         //Creating an image
         String current = new java.io.File( "." ).getCanonicalPath();
-        Image image = new Image(new FileInputStream(current+"/src/View/HideAndSeek.jpg"));
+        Image image = new Image(new FileInputStream(current+"/Resources/HideAndSeek.jpg"));
         //Setting the image view
         ImageView imageView = new ImageView(image);
         //Setting the position of the image

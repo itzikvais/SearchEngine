@@ -147,7 +147,8 @@ public class Controller implements Observer {
 
             String lang = br.readLine().trim();
             while (lang != null) {
-                language.getItems().add(lang);
+                if(!lang.equals("null")&&lang.length()>1)
+                    language.getItems().add(lang);
                 lang = br.readLine();
             }
             br.close();
