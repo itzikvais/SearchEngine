@@ -125,10 +125,7 @@ public class Searcher {
             while ((line = br.readLine()) != null){
                 String[] splited=line.split( " " );
                 if(splited.length>=1&&splited[0].equals( "<num>" )) {
-                    System.out.println(line);
-                    System.out.println(splited[2].trim());
                     queryNum = Integer.parseInt(splited[2].trim());
-                    System.out.println(queryNum);
                 }
                 if(splited.length>1&&splited[0].equals( "<title>" )){
                     String query="";
@@ -182,10 +179,12 @@ public class Searcher {
                     writeToFile(queryNum, 0,rankedDocs);
                 }
             }
+            br.close();
         }
         catch (Exception e){
             e.printStackTrace();
         }
+
     }
 
     private void writeToFile( int queryNum, int i, ArrayList<DocForSearcher> rankedDocs) {

@@ -440,7 +440,9 @@ public class Controller implements Observer {
      * @param docs
      */
     private void showAllDocs(DocForSearcher docs) {
-        Label parameters=new Label( "document ID"+docs.getDocID() + ", document rank: " +docs.rank);
+        Double docRank=docs.rank;
+        String rank=String.format("%.3f", docRank);
+        Label parameters=new Label( "document ID"+docs.getDocID() + ", document rank: " +rank);
         Button entities = new Button("show entities");
         entities.setOnAction( e->showEntities(docs) );
         HBox hb= new HBox(  );
