@@ -361,41 +361,55 @@ public class Ranker {
     private ArrayList<DocForSearcher> getDocsByCity(ArrayList<String> citiesFromUser) {
         ArrayList<DocForSearcher> docsByCity = new ArrayList<>();
         BufferedReader postingFileBR = null;
-        try {
-            String path;
-            if(toStem)
-                path = postingDirPath + "\\withStemming";
-            else path = postingDirPath + "\\withoutStemming";
-            postingFileBR = new BufferedReader(new InputStreamReader(new FileInputStream(new File(path + "\\" + "PostingFile" + ".txt"))));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
         String line = null;
         try {
-                if (postingFileBR != null) {
-                    //search the line
-                    line = postingFileBR.readLine();
-                    while (line != null) {
-                        String currCity = line.split("#")[0];
-                        if (citiesFromUser.contains(currCity)){
-                            String[] splited = line.split("#")[1].split(";");
-                            for (String cell : splited){
-                                String currDocID = cell.split(":")[0].replace("*","").trim();
-                                if (withRank.keySet().contains(currDocID))
-                                    docsByCity.add(withRank.get(currDocID));
-                            }
-                        }
-                        line = postingFileBR.readLine();
-                    }
-                    //use the line
+            String postingFilesDirFullPath;
+            if (toStem) {
+                postingFilesDirFullPath = postingDirPath + "\\" + "withStemming" + "\\" + "PostingFiles";
+            } else {
+                postingFilesDirFullPath = postingDirPath + "\\" + "withoutStemming" + "\\" + "PostingFiles";
+            }
+            if (citiesFromUser != null && !citiesFromUser.isEmpty()) {
+                for (String city : citiesFromUser) {
+                    char firstChar = city.charAt(0);
+                    String postingFileFullPath = null;
+                    if (firstChar >= '0' && firstChar <= '9')
+                        continue;
+                    else if (firstChar >= 'A' && firstChar <= 'G')
+                        postingFileFullPath = postingFilesDirFullPath + "\\CAG.txt";
+                    else if (firstChar >= 'H' && firstChar <= 'O')
+                        postingFileFullPath = postingFilesDirFullPath + "\\CHO.txt";
+                    else if (firstChar >= 'P' && firstChar <= 'Z')
+                        postingFileFullPath = postingFilesDirFullPath + "\\CPZ.txt";
+                    else if (firstChar >= 'a' && firstChar <= 'g')
+                        postingFileFullPath = postingFilesDirFullPath + "\\ag.txt";
+                    else if (firstChar >= 'h' && firstChar <= 'o')
+                        postingFileFullPath = postingFilesDirFullPath + "\\ho.txt";
+                    else if (firstChar >= 'p' && firstChar <= 'z')
+                        postingFileFullPath = postingFilesDirFullPath + "\\pz.txt";
+                    if (postingFileFullPath != null)
+                        postingFileBR = new BufferedReader(new InputStreamReader(new FileInputStream(new File(postingFileFullPath))));
 
+                    if (postingFileBR != null) {
+                        //search the line
+                        line = postingFileBR.readLine();
+                        while (line != null) {
+                            String currCity = line.split("#")[0];
+                            if (citiesFromUser.contains(currCity)) {
+                                String[] splited = line.split("#")[1].split(";");
+                                for (String cell : splited) {
+                                    String currDocID = cell.split(":")[0].replace("*", "").trim();
+                                    if (withRank.keySet().contains(currDocID))
+                                        docsByCity.add(withRank.get(currDocID));
+                                }
+                            }
+                            line = postingFileBR.readLine();
+                        }
+                    }
                 }
-        }
-        catch (Exception e){
+            }
+        } catch (FileNotFoundException e) {
             e.printStackTrace();
-        }
-        try {
-            postingFileBR.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
