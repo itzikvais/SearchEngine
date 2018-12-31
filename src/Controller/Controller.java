@@ -304,18 +304,8 @@ public class Controller implements Observer {
      * search a couple of queries from a file
      */
     private void searchQueryFile() {
-        if(txtfld_path.getText()==null||txtfld_path.getText().length()<1){
-            Alert alert= new Alert(Alert.AlertType.WARNING);
-            alert.setContentText("you must choose posting path!");
-            alert.showAndWait();
+        if(!checkBeforeSearch())
             return;
-        }
-        if(queryResult.getText()==null||queryResult.getText().length()<1){
-            Alert alert= new Alert(Alert.AlertType.WARNING);
-            alert.setContentText("you must choose query result destination");
-            alert.showAndWait();
-            return;
-        }
         if(queryFilePlace.getText()==null||queryFilePlace.getText().length()<1){
             Alert queryWarning=new Alert( Alert.AlertType.WARNING );
             queryWarning.setContentText( "please Insert a query" );
@@ -354,21 +344,31 @@ public class Controller implements Observer {
             System.out.println("problem in corpus");
         }
     }
-
-    // search a single query
-    private void SearchQuery() {
+    private boolean checkBeforeSearch(){
+        if(txtfld_corpus.getText()==null||txtfld_corpus.getText().length()<1){
+            Alert alert= new Alert(Alert.AlertType.WARNING);
+            alert.setContentText("you must choose corpus path!");
+            alert.showAndWait();
+            return false;
+        }
         if(txtfld_path.getText()==null||txtfld_path.getText().length()<1){
             Alert alert= new Alert(Alert.AlertType.WARNING);
             alert.setContentText("you must choose posting path!");
             alert.showAndWait();
-            return;
+            return false;
         }
         if(queryResult.getText()==null||queryResult.getText().length()<1){
             Alert alert= new Alert(Alert.AlertType.WARNING);
             alert.setContentText("you must choose query result destination");
             alert.showAndWait();
-            return;
+            return false;
         }
+        return true;
+    }
+    // search a single query
+    private void SearchQuery() {
+        if(!checkBeforeSearch())
+            return;
         if(queryPlace.getText().length()<1){
             Alert queryWarning=new Alert( Alert.AlertType.WARNING );
             queryWarning.setContentText( "please Insert a query" );
