@@ -26,7 +26,7 @@ public class ReadFile {
 
     public ReadFile(String path, String postingsPath) {
         this.swPath=path;
-        this.corpusPath = path+"\\miniCorpus";
+        this.corpusPath = path+"\\corpus";
         this.postingDirPath = postingsPath;
     }
     public void setCorpusPath(String f){
